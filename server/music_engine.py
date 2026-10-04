@@ -49,7 +49,7 @@ APP_VERSION_FILE = os.path.join(BASE_DIR, "app_version.json")
 APP_APK_PATH = os.getenv("APP_APK_PATH", "").strip() or os.path.join(WEBAPP_DIR, "MusicFind-debug.apk")
 DEFAULT_APP_VERSION_CODE = 1
 DEFAULT_APP_VERSION_NAME = "1.0.0"
-LOCK_FILE = os.getenv("MUSICBOT_LOCK_FILE", "/tmp/musicbot.lock").strip() or "/tmp/musicbot.lock"
+LOCK_FILE = os.getenv("MUSICFIND_LOCK_FILE", "/tmp/musicfind.lock").strip() or "/tmp/musicfind.lock"
 PLAYLIST_META_FILENAME = ".playlist_meta.json"
 LIKED_PLAYLIST_NAME = "Мне нравится"
 
@@ -4709,7 +4709,7 @@ def acquire_process_lock():
     try:
         fcntl.flock(process_lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError as e:
-        raise RuntimeError("Another Music Bot instance is already running in this directory.") from e
+        raise RuntimeError("Another MusicFind instance is already running in this directory.") from e
     process_lock_handle.write(str(os.getpid()))
     process_lock_handle.flush()
 
