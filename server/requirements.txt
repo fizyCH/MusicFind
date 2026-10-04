@@ -1,0 +1,4 @@
+aiohttp>=3.10,<4
+python-dotenv>=1.0
+shazamio>=0.6
+yt-dlp>=2024.1.1

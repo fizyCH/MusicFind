@@ -1,0 +1,27 @@
+# --- Gradle / Android ---
+.gradle/
+.kotlin/
+build/
+*/build/
+local.properties
+*.apk
+*.aab
+*.iml
+.idea/
+.cxx/
+captures/
+
+# --- Server: secrets & runtime data ---
+server/.env
+server/.venv/
+server/__pycache__/
+server/**/__pycache__/
+server/data/
+server/.cookies_runtime/
+server/*cookies*.txt
+server/**/*cookies*.txt
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.log
