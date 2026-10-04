@@ -40,6 +40,12 @@ done
 
 [[ "$(id -u)" -eq 0 ]] || die "Run as root: sudo ./install.sh"
 
+[[ -f "$SERVER_DIR/main.py" && -f "$SERVER_DIR/requirements.txt" ]] || die \
+"Could not find the project next to install.sh.
+Expected: $SERVER_DIR/main.py
+Run the installer from the repository root (the folder that contains 'server/' and 'app/'):
+    git clone <repo-url> musicfind && cd musicfind && sudo ./install.sh"
+
 # --- uninstall ---
 if [[ "${UNINSTALL:-0}" == "1" ]]; then
   log "Stopping and removing ${SERVICE_NAME}"
