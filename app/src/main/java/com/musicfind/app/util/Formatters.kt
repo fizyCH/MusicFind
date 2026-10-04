@@ -1,6 +1,7 @@
 package com.musicfind.app.util
 
 import android.content.Context
+import com.musicfind.app.R
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 
@@ -20,7 +21,7 @@ object Formatters {
         return "?"
     }
 
-    /** First letters of the values, e.g. title + artist -> "НА". Falls back to "?". */
+    /** First letters of the values, e.g. title + artist -> Loc.s(R.string.na). Falls back to "?". */
     fun initials2(vararg values: String?): String {
         val letters = StringBuilder()
         for (value in values) {

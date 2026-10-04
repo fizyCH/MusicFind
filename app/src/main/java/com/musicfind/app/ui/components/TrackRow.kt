@@ -1,6 +1,8 @@
 package com.musicfind.app.ui.components
 
 import androidx.compose.foundation.background
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -133,7 +135,7 @@ fun TrackRow(
             IconButton(onClick = onToggleFavorite, modifier = Modifier.size(ActionSize)) {
                 Icon(
                     if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription = "В избранное",
+                    contentDescription = Loc.s(R.string.add_to_favorites),
                     tint = if (isFavorite) colors.accent else colors.muted,
                     modifier = Modifier.size(22.dp),
                 )
@@ -143,7 +145,7 @@ fun TrackRow(
             IconButton(onClick = onRemove, modifier = Modifier.size(ActionSize)) {
                 Icon(
                     Icons.Filled.PlaylistRemove,
-                    contentDescription = "Убрать из плейлиста",
+                    contentDescription = Loc.s(R.string.remove_from_playlist),
                     tint = colors.muted,
                     modifier = Modifier.size(22.dp),
                 )
@@ -153,7 +155,7 @@ fun TrackRow(
             IconButton(onClick = onDeleteFromDevice, modifier = Modifier.size(ActionSize)) {
                 Icon(
                     Icons.Filled.DeleteForever,
-                    contentDescription = "Удалить с устройства",
+                    contentDescription = Loc.s(R.string.delete_from_device),
                     tint = colors.error,
                     modifier = Modifier.size(22.dp),
                 )
@@ -167,7 +169,7 @@ fun TrackRow(
                 IconButton(onClick = onCancelDownload, modifier = Modifier.size(ActionSize)) {
                     Icon(
                         Icons.Filled.Close,
-                        contentDescription = "Отменить скачивание",
+                        contentDescription = Loc.s(R.string.cancel_download),
                         tint = colors.error,
                         modifier = Modifier.size(22.dp),
                     )
@@ -181,7 +183,7 @@ fun TrackRow(
             IconButton(onClick = onPlay, modifier = Modifier.size(ActionSize)) {
                 Icon(
                     if (isActive && isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = "Играть",
+                    contentDescription = Loc.s(R.string.play),
                     tint = if (isActive) colors.accent else colors.text,
                     modifier = Modifier.size(26.dp),
                 )
@@ -192,7 +194,7 @@ fun TrackRow(
                 IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(ActionSize)) {
                     Icon(
                         Icons.Filled.MoreVert,
-                        contentDescription = "Ещё",
+                        contentDescription = Loc.s(R.string.more),
                         tint = colors.muted,
                         modifier = Modifier.size(22.dp),
                     )
@@ -200,7 +202,7 @@ fun TrackRow(
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     if (onAddToPlaylist != null) {
                         DropdownMenuItem(
-                            text = { Text("Добавить в плейлист") },
+                            text = { Text(Loc.s(R.string.add_to_playlist)) },
                             leadingIcon = { Icon(Icons.Filled.PlaylistAdd, contentDescription = null) },
                             onClick = {
                                 menuOpen = false
@@ -210,7 +212,7 @@ fun TrackRow(
                     }
                     if (onEditTrack != null) {
                         DropdownMenuItem(
-                            text = { Text("Изменить автора/название") },
+                            text = { Text(Loc.s(R.string.edit_artist_title)) },
                             leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
                             onClick = {
                                 menuOpen = false
@@ -220,7 +222,7 @@ fun TrackRow(
                     }
                     if (canDownload) {
                         DropdownMenuItem(
-                            text = { Text("Скачать") },
+                            text = { Text(Loc.s(R.string.download)) },
                             leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
                             onClick = {
                                 menuOpen = false

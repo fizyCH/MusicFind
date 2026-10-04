@@ -1,6 +1,8 @@
 package com.musicfind.app.ui.screens
 
 import android.Manifest
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.RepeatMode
@@ -93,7 +95,7 @@ fun SearchScreen(
             recordSeconds = 0
             recording = true
         } else {
-            vm.setError("Не удалось начать запись. Проверьте доступ к микрофону")
+            vm.setError(Loc.s(R.string.record_start_failed))
         }
     }
 
@@ -101,7 +103,7 @@ fun SearchScreen(
         if (granted) {
             beginRecording()
         } else {
-            vm.setError("Нет доступа к микрофону")
+            vm.setError(Loc.s(R.string.no_mic_access))
         }
     }
 
@@ -114,7 +116,7 @@ fun SearchScreen(
         if (!recording) return
         recording = false
         val pcm = recorder.stop()
-        if (pcm != null) vm.recognizeRecording(pcm) else vm.setError("Не удалось сохранить запись")
+        if (pcm != null) vm.recognizeRecording(pcm) else vm.setError(Loc.s(R.string.record_save_failed))
     }
 
     // Poll microphone loudness while recording to drive the visualizer.
@@ -158,8 +160,8 @@ fun SearchScreen(
         item {
             GlassSurface(Modifier.fillMaxWidth()) {
                 SectionTitle(
-                    title = "Поиск музыки",
-                    subtitle = "Найди трек и включи его сразу",
+                    title = Loc.s(R.string.search_music),
+                    subtitle = Loc.s(R.string.search_tagline),
                 )
                 Spacer(Modifier.height(12.dp))
                 Row(
@@ -172,7 +174,7 @@ fun SearchScreen(
                         modifier = Modifier.weight(1f),
                         placeholder = {
                             Text(
-                                "Название или исполнитель",
+                                Loc.s(R.string.title_or_artist),
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         },
@@ -185,7 +187,7 @@ fun SearchScreen(
                                 IconButton(onClick = vm::clearSearch) {
                                     Icon(
                                         Icons.Filled.Close,
-                                        contentDescription = "Очистить",
+                                        contentDescription = Loc.s(R.string.clear),
                                         tint = colors.muted,
                                     )
                                 }
@@ -203,7 +205,7 @@ fun SearchScreen(
                     }
                     Button(onClick = if (ui.searching) vm::cancelSearch else vm::search) {
                         if (ui.searching) {
-                            Icon(Icons.Filled.Close, contentDescription = "Отменить поиск")
+                            Icon(Icons.Filled.Close, contentDescription = Loc.s(R.string.cancel_search))
                         } else {
                             Icon(Icons.Filled.Search, contentDescription = null)
                         }
@@ -221,7 +223,7 @@ fun SearchScreen(
                     ) {
                         Icon(Icons.Filled.GraphicEq, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Файл")
+                        Text(Loc.s(R.string.file))
                     }
                     OutlinedButton(
                         onClick = { if (recording) stopRecording() else startRecording() },
@@ -231,11 +233,11 @@ fun SearchScreen(
                         if (recording) {
                             Icon(Icons.Filled.Stop, contentDescription = null, tint = colors.accent)
                             Spacer(Modifier.width(8.dp))
-                            Text("Стоп · ${MAX_RECORD_SECONDS - recordSeconds}с")
+                            Text(Loc.s(R.string.stop_countdown, MAX_RECORD_SECONDS - recordSeconds))
                         } else {
                             Icon(Icons.Filled.Mic, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Слушать")
+                            Text(Loc.s(R.string.listen))
                         }
                     }
                 }
@@ -262,7 +264,7 @@ fun SearchScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Слушаю… нажмите «Стоп», когда играет музыка",
+                            Loc.s(R.string.listening_hint),
                             color = colors.muted,
                             style = MaterialTheme.typography.bodySmall,
                         )
@@ -271,17 +273,17 @@ fun SearchScreen(
                     Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                         Spacer(Modifier.width(8.dp))
-                        Text("Распознаём…", color = colors.accent, style = MaterialTheme.typography.bodySmall)
+                        Text(Loc.s(R.string.recognizing), color = colors.accent, style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.weight(1f))
                         TextButton(onClick = vm::cancelRecognize) {
-                            Text("Отмена", style = MaterialTheme.typography.bodySmall)
+                            Text(Loc.s(R.string.cancel), style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
 
                 ui.recognized?.let { rec ->
                     Text(
-                        "Распознано: ${rec.artist} — ${rec.title}",
+                        Loc.s(R.string.recognized_result, rec.artist, rec.title),
                         color = colors.accent,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 8.dp),
@@ -293,14 +295,14 @@ fun SearchScreen(
         if (ui.searchResults.isNotEmpty()) {
             item {
                 SectionTitle(
-                    title = "Результаты",
-                    subtitle = "${ui.searchResults.size} треков",
+                    title = Loc.s(R.string.results),
+                    subtitle = Loc.s(R.string.tracks_count, ui.searchResults.size),
                     modifier = Modifier.fillMaxWidth(),
                     trailing = {
                         IconButton(onClick = vm::clearSearch) {
                             Icon(
                                 Icons.Filled.Close,
-                                contentDescription = "Очистить результаты",
+                                contentDescription = Loc.s(R.string.clear_results),
                                 tint = colors.muted,
                             )
                         }
@@ -347,7 +349,7 @@ fun SearchScreen(
         } else if (!ui.searching && ui.searchQuery.length >= 2) {
             item {
                 Text(
-                    "Ничего не найдено",
+                    Loc.s(R.string.nothing_found),
                     color = colors.muted,
                     modifier = Modifier.padding(vertical = 24.dp),
                 )

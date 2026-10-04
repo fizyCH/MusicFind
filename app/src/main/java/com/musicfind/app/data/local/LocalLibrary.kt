@@ -1,6 +1,8 @@
 package com.musicfind.app.data.local
 
 import android.content.Context
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import android.os.Environment
 import com.musicfind.app.data.model.Track
 import org.json.JSONObject
@@ -15,7 +17,7 @@ object LocalLibrary {
 
     private const val ROOT_NAME = "MusicFind"
     private const val META_FILE = ".meta.json"
-    private const val DEFAULT_PLAYLIST = "Загрузки"
+    private const val DEFAULT_PLAYLIST = "Downloads"
 
     fun sanitize(value: String): String =
         value.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().ifBlank { "track" }

@@ -247,6 +247,7 @@ data class AppVersionResponse(
     val ok: Boolean = false,
     val error: String? = null,
     val message: String? = null,
+    @Serializable(with = LenientInt::class)
     @SerialName("version_code") val versionCode: Int = 0,
     @SerialName("version_name") val versionName: String = "",
     val notes: String = "",

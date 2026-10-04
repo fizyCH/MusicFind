@@ -42,7 +42,8 @@ APP_APK_PATH = os.getenv("APP_APK_PATH", os.path.join(DATA_DIR, "app", "MusicFin
 AUTO_UPDATE = os.getenv("AUTO_UPDATE", "1") != "0"
 AUTO_UPDATE_INTERVAL = int(os.getenv("AUTO_UPDATE_INTERVAL_SECONDS", str(24 * 3600)) or str(24 * 3600))
 
-FAVORITES_NAME = "Мне нравится"
+FAVORITES_NAME = "Liked"
+LEGACY_FAVORITES_NAMES = ("Мне нравится",)
 
 _lock = asyncio.Lock()
 
@@ -339,6 +340,7 @@ def _clean_track(track):
 
 
 def user_playlists(user):
+    _migrate_favorites(user)
     directory = user_dir(user)
     result = []
     for filename in os.listdir(directory):
@@ -355,14 +357,44 @@ def user_playlists(user):
             "name": name,
             "track_count": len(tracks),
             "cover_url": data.get("cover_url", ""),
-            "is_favorites": name == FAVORITES_NAME,
+            "is_favorites": name == FAVORITES_NAME or name in LEGACY_FAVORITES_NAMES,
             "tracks": tracks,
         })
     result.sort(key=lambda p: (not p["is_favorites"], p["name"].lower()))
     return result
 
 
+def _migrate_favorites(user):
+    """Rename a legacy favorites playlist (e.g. "Мне нравится") to FAVORITES_NAME."""
+    directory = user_dir(user)
+    if read_playlist(user, FAVORITES_NAME) is not None:
+        return
+    for legacy in LEGACY_FAVORITES_NAMES:
+        legacy_json = os.path.join(directory, sanitize_name(legacy) + ".json")
+        if not os.path.exists(legacy_json):
+            continue
+        try:
+            with open(legacy_json, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            data = {"tracks": [], "cover_url": ""}
+        write_playlist(user, FAVORITES_NAME, data)
+        try:
+            os.remove(legacy_json)
+        except OSError:
+            pass
+        legacy_dir = os.path.join(directory, sanitize_name(legacy))
+        new_dir = os.path.join(directory, sanitize_name(FAVORITES_NAME))
+        if os.path.isdir(legacy_dir) and not os.path.exists(new_dir):
+            try:
+                os.rename(legacy_dir, new_dir)
+            except OSError:
+                pass
+        return
+
+
 def ensure_favorites(user):
+    _migrate_favorites(user)
     if read_playlist(user, FAVORITES_NAME) is None:
         write_playlist(user, FAVORITES_NAME, {"tracks": [], "cover_url": ""})
 
@@ -616,6 +648,11 @@ async def api_remove_playlist(request):
         return web.json_response({"ok": False, "error": "AUTH_INVALID"}, status=401)
     payload = await request.json()
     name = (payload.get("playlist_name") or "").strip()
+    if name == FAVORITES_NAME or name in LEGACY_FAVORITES_NAMES:
+        return web.json_response(
+            {"ok": False, "error": "PLAYLIST_DELETE_FORBIDDEN", "message": "The favorites playlist cannot be deleted."},
+            status=400,
+        )
     delete_playlist_file(user, name)
     return web.json_response({"ok": True, "playlists": user_playlists(user)})
 

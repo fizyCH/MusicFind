@@ -1,6 +1,8 @@
 package com.musicfind.app.ui
 
 import android.app.Application
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -152,9 +154,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val removed = withContext(Dispatchers.IO) { LocalLibrary.deleteTrack(getApplication(), track) }
             if (removed) {
                 refreshOffline()
-                _ui.update { it.copy(message = "Удалено с устройства") }
+                _ui.update { it.copy(message = Loc.s(R.string.removed_from_device)) }
             } else {
-                _ui.update { it.copy(error = "Файл не найден на устройстве") }
+                _ui.update { it.copy(error = Loc.s(R.string.file_not_found_device)) }
             }
         }
     }
@@ -164,9 +166,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val removed = withContext(Dispatchers.IO) { LocalLibrary.deletePlaylist(getApplication(), name) }
             if (removed) {
                 refreshOffline()
-                _ui.update { it.copy(message = "Плейлист удалён с устройства") }
+                _ui.update { it.copy(message = Loc.s(R.string.playlist_removed_device)) }
             } else {
-                _ui.update { it.copy(error = "Скачанный плейлист не найден") }
+                _ui.update { it.copy(error = Loc.s(R.string.downloaded_playlist_not_found)) }
             }
         }
     }
@@ -183,7 +185,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         online = false,
                         serverReachable = false,
                         error = null,
-                        message = NetErrors.NO_INTERNET,
+                        message = NetErrors.noInternet,
                     )
                 }
                 return@launch
@@ -270,7 +272,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             _ui.update { it.copy(recognizing = true, error = null) }
             try {
                 val file = withContext(Dispatchers.IO) { copyToCache(uri) }
-                    ?: throw IllegalStateException("Не удалось прочитать файл")
+                    ?: throw IllegalStateException(Loc.s(R.string.file_read_failed))
                 uploadRecognition(file)
             } catch (c: CancellationException) {
                 throw c
@@ -284,7 +286,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun recognizeRecording(pcmFile: File) {
         if (pcmFile.length() < 44_100) {
             runCatching { pcmFile.delete() }
-            _ui.update { it.copy(error = "Запись слишком короткая — попробуйте ещё раз") }
+            _ui.update { it.copy(error = Loc.s(R.string.recording_too_short)) }
             return
         }
         recognizeJob?.cancel()
@@ -292,7 +294,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             _ui.update { it.copy(recognizing = true, error = null) }
             try {
                 val file = withContext(Dispatchers.IO) { AudioRecorder.encodeToM4a(pcmFile) }
-                    ?: throw IllegalStateException("Не удалось обработать запись")
+                    ?: throw IllegalStateException(Loc.s(R.string.record_process_failed))
                 uploadRecognition(file)
             } catch (c: CancellationException) {
                 runCatching { pcmFile.delete() }
@@ -447,7 +449,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _ui.update { it.copy(busy = it.busy + key) }
             repo.addTrackToPlaylist(playlistName, track)
-                .onSuccess { data -> _ui.update { it.copy(busy = it.busy - key, playlists = data.playlists, message = "Добавлено в $playlistName") } }
+                .onSuccess { data -> _ui.update { it.copy(busy = it.busy - key, playlists = data.playlists, message = Loc.s(R.string.added_to_playlist, playlistName)) } }
                 .onFailure { error -> _ui.update { it.copy(busy = it.busy - key, error = error.message) } }
         }
     }
@@ -490,7 +492,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repo.renamePlaylistTrack(playlistName, track, effectiveTitle, newArtist)
                 .onSuccess { data ->
                     applyPlaylists(data.playlists)
-                    _ui.update { it.copy(message = "Трек обновлён") }
+                    _ui.update { it.copy(message = Loc.s(R.string.track_updated)) }
                     if (wasDownloaded) {
                         // Re-download on the device under the new name.
                         val updated = track.copy(
@@ -529,7 +531,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 val target = File(folder, "${LocalLibrary.sanitize(name)}.jpg")
                 withContext(Dispatchers.IO) {
                     val input = getApplication<Application>().contentResolver.openInputStream(uri)
-                        ?: throw IllegalStateException("Не удалось открыть изображение")
+                        ?: throw IllegalStateException(Loc.s(R.string.image_open_failed))
                     input.use { source -> target.outputStream().use { source.copyTo(it) } }
                 }
                 val fileUri = "file://${target.absolutePath}"
@@ -537,11 +539,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 _ui.update {
                     it.copy(
                         coverOverrides = it.coverOverrides + (name to fileUri),
-                        message = "Обложка обновлена",
+                        message = Loc.s(R.string.cover_updated),
                     )
                 }
             } catch (t: Throwable) {
-                _ui.update { it.copy(error = t.message ?: "Не удалось открыть изображение") }
+                _ui.update { it.copy(error = t.message ?: Loc.s(R.string.image_open_failed)) }
             }
         }
     }
@@ -550,7 +552,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repo.updateProfile(displayName, avatarUrl)
                 .onSuccess {
-                    _ui.update { it.copy(message = "Профиль обновлён") }
+                    _ui.update { it.copy(message = Loc.s(R.string.profile_updated)) }
                     // Re-read from the server so cleared/updated fields are reflected exactly.
                     load()
                 }
@@ -563,7 +565,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val file = withContext(Dispatchers.IO) { copyToCache(uri) }
                 if (file == null) {
-                    _ui.update { it.copy(error = "Не удалось прочитать файл") }
+                    _ui.update { it.copy(error = Loc.s(R.string.file_read_failed)) }
                     return@launch
                 }
                 val part = MultipartBody.Part.createFormData(
@@ -573,7 +575,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 repo.uploadAvatar(part)
                     .onSuccess {
-                        _ui.update { it.copy(message = "Аватар обновлён") }
+                        _ui.update { it.copy(message = Loc.s(R.string.avatar_updated)) }
                         // Re-read from the server so the new avatar URL is applied.
                         load()
                     }
@@ -595,12 +597,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 repo.uploadAvatar(part)
                     .onSuccess {
-                        _ui.update { it.copy(message = "Аватар обновлён") }
+                        _ui.update { it.copy(message = Loc.s(R.string.avatar_updated)) }
                         load()
                     }
                     .onFailure { error -> _ui.update { it.copy(error = error.message) } }
             } catch (t: Throwable) {
-                _ui.update { it.copy(error = t.message ?: "Не удалось загрузить аватар") }
+                _ui.update { it.copy(error = t.message ?: Loc.s(R.string.avatar_upload_failed)) }
             } finally {
                 runCatching { file.delete() }
             }
@@ -611,7 +613,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repo.updateProfile(null, "")
                 .onSuccess {
-                    _ui.update { it.copy(message = "Аватар удалён") }
+                    _ui.update { it.copy(message = Loc.s(R.string.avatar_removed)) }
                     load()
                 }
                 .onFailure { error -> _ui.update { it.copy(error = error.message) } }
@@ -621,7 +623,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun unlinkTelegram() {
         viewModelScope.launch {
             repo.unlinkTelegram()
-                .onSuccess { _ui.update { state -> state.copy(message = "Telegram отвязан") } }
+                .onSuccess { _ui.update { state -> state.copy(message = Loc.s(R.string.telegram_unlinked)) } }
                 .onFailure { error -> _ui.update { it.copy(error = error.message) } }
         }
     }
@@ -641,7 +643,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun downloadTrack(track: Track, playlistName: String? = null) {
         val key = trackKey(track)
         val downloadKey = "track:$key"
-        val targetPlaylist = playlistName?.takeIf { it.isNotBlank() } ?: "Загрузки"
+        val targetPlaylist = playlistName?.takeIf { it.isNotBlank() } ?: Loc.s(R.string.downloads)
         trackDownloadJobs.remove(key)?.cancel()
         trackDownloadJobs[key] = viewModelScope.launch {
             _ui.update {
@@ -649,7 +651,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     busy = it.busy + key,
                     downloadingKeys = it.downloadingKeys + key,
                     downloadProgress = it.downloadProgress + (key to 0f),
-                    message = "Скачивание…",
+                    message = Loc.s(R.string.downloading),
                 )
             }
             try {
@@ -660,7 +662,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     onDownloadId = { activeDownloadIds[downloadKey] = it },
                 )
                 if (media == null || media.audioUrl.isBlank()) {
-                    throw IllegalStateException("Не удалось получить файл")
+                    throw IllegalStateException(Loc.s(R.string.file_fetch_failed))
                 }
                 val audioUrl = com.musicfind.app.data.remote.ApiClient.absoluteUrl(media.audioUrl)
                 val coverUrl = media.coverUrl?.let { com.musicfind.app.data.remote.ApiClient.absoluteUrl(it) }
@@ -680,7 +682,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         busy = it.busy - key,
                         downloadingKeys = it.downloadingKeys - key,
                         downloadProgress = it.downloadProgress - key,
-                        message = "Скачано в «$targetPlaylist»",
+                        message = Loc.s(R.string.downloaded_to, targetPlaylist),
                     )
                 }
             } catch (c: CancellationException) {
@@ -704,7 +706,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val downloadKey = "track:$key"
         cancelActiveServerDownload(downloadKey)
         trackDownloadJobs.remove(key)?.cancel()
-        _ui.update { it.copy(message = "Скачивание отменено") }
+        _ui.update { it.copy(message = Loc.s(R.string.download_cancelled)) }
     }
 
     private fun downloadBytes(
@@ -718,7 +720,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         try {
             call.execute().use { response ->
                 if (!response.isSuccessful) throw IllegalStateException("HTTP ${response.code}")
-                val body = response.body ?: throw IllegalStateException("Пустой ответ")
+                val body = response.body ?: throw IllegalStateException(Loc.s(R.string.empty_response))
                 val total = body.contentLength()
                 val output = java.io.ByteArrayOutputStream()
                 val buffer = ByteArray(64 * 1024)
@@ -745,11 +747,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val playlist = _ui.value.playlists.firstOrNull { it.name == playlistName } ?: return
         if (_ui.value.downloadingPlaylist != null) return
         if (playlist.tracks.isEmpty()) {
-            _ui.update { it.copy(message = "Плейлист «$playlistName» пуст") }
+            _ui.update { it.copy(message = Loc.s(R.string.playlist_empty_named, playlistName)) }
             return
         }
         if (!Formatters.isOnline(getApplication())) {
-            _ui.update { it.copy(error = NetErrors.NO_INTERNET) }
+            _ui.update { it.copy(error = NetErrors.noInternet) }
             return
         }
         val downloadKey = "playlist:$playlistName"
@@ -761,7 +763,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     downloadingPlaylist = playlistName,
                     playlistDownloadDone = 0,
                     playlistDownloadTotal = tracks.size,
-                    message = "Скачивание «$playlistName»…",
+                    message = Loc.s(R.string.downloading_named, playlistName),
                     error = null,
                 )
             }
@@ -780,7 +782,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     try {
                         val media = repo.resolveMedia(track, playlistName, onDownloadId = { activeDownloadIds[downloadKey] = it })
                         if (media == null || media.audioUrl.isBlank()) {
-                            throw IllegalStateException("Не удалось получить файл")
+                            throw IllegalStateException(Loc.s(R.string.file_fetch_failed))
                         }
                         val audioUrl = com.musicfind.app.data.remote.ApiClient.absoluteUrl(media.audioUrl)
                         val coverUrl = media.coverUrl?.let { com.musicfind.app.data.remote.ApiClient.absoluteUrl(it) }
@@ -807,7 +809,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         downloadingPlaylist = null,
                         playlistDownloadTotal = 0,
                         playlistDownloadDone = 0,
-                        message = "Скачивание отменено",
+                        message = Loc.s(R.string.download_cancelled),
                     )
                 }
                 throw c
@@ -816,14 +818,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 activeCalls.remove(downloadKey)
             }
             refreshOffline()
-            val suffix = if (failed > 0) ", ошибок: $failed" else ""
-            val skipSuffix = if (skipped > 0) ", пропущено: $skipped" else ""
+            val suffix = if (failed > 0) Loc.s(R.string.download_errors_suffix, failed) else ""
+            val skipSuffix = if (skipped > 0) Loc.s(R.string.download_skipped_suffix, skipped) else ""
             _ui.update {
                 it.copy(
                     downloadingPlaylist = null,
                     playlistDownloadTotal = 0,
                     playlistDownloadDone = 0,
-                    message = "Скачано «$playlistName»: $done${if (failed > 0) "/${tracks.size}" else ""}$suffix$skipSuffix",
+                    message = Loc.s(
+                        R.string.download_done_named,
+                        playlistName,
+                        "$done${if (failed > 0) "/${tracks.size}" else ""}",
+                    ) + suffix + skipSuffix,
                 )
             }
         }
@@ -840,7 +846,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 downloadingPlaylist = null,
                 playlistDownloadTotal = 0,
                 playlistDownloadDone = 0,
-                message = "Скачивание отменено",
+                message = Loc.s(R.string.download_cancelled),
             )
         }
     }

@@ -1,6 +1,8 @@
 package com.musicfind.app.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -52,7 +54,7 @@ fun SetupScreen(
                 Text("MusicFind", style = MaterialTheme.typography.headlineMedium, color = colors.text)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Укажите адрес сервера, к которому подключается приложение",
+                    Loc.s(R.string.setup_server_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.muted,
                 )
@@ -61,8 +63,8 @@ fun SetupScreen(
                     value = value,
                     onValueChange = { value = it; error = null },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Адрес сервера") },
-                    placeholder = { Text("https://адрес-сервера") },
+                    label = { Text(Loc.s(R.string.server_address)) },
+                    placeholder = { Text(Loc.s(R.string.server_url_hint)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Uri,
@@ -82,7 +84,7 @@ fun SetupScreen(
                     onClick = {
                         val normalized = normalizeServer(value)
                         if (normalized == null) {
-                            error = "Нужен корректный http(s)-адрес"
+                            error = Loc.s(R.string.need_valid_url)
                         } else {
                             onSubmit(normalized)
                         }
@@ -90,7 +92,7 @@ fun SetupScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
                 ) {
-                    Text("Продолжить")
+                    Text(Loc.s(R.string.continue_label))
                 }
             }
         }

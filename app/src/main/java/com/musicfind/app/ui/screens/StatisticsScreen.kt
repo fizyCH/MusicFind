@@ -1,6 +1,8 @@
 package com.musicfind.app.ui.screens
 
 import androidx.compose.animation.AnimatedContent
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -124,27 +126,27 @@ fun StatisticsScreen(vm: AppViewModel) {
                         val stats = ui.statistics
                         if (stats == null) {
                             Text(
-                                if (ui.statisticsLoading) "Загрузка…" else "Пока нет данных",
+                                if (ui.statisticsLoading) Loc.s(R.string.loading) else Loc.s(R.string.no_data),
                                 color = colors.muted,
                             )
                         } else {
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                StatCard("Время", "${stats.totalActiveHours} ч", Modifier.weight(1f))
-                                StatCard("Дней", "${stats.totalActiveDays}", Modifier.weight(1f))
+                                StatCard(Loc.s(R.string.time_label), Loc.s(R.string.hours_count, stats.totalActiveHours), Modifier.weight(1f))
+                                StatCard(Loc.s(R.string.days), "${stats.totalActiveDays}", Modifier.weight(1f))
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                StatCard("Плейлистов", "${stats.playlistCount}", Modifier.weight(1f))
-                                StatCard("Треков", "${stats.trackCount}", Modifier.weight(1f))
+                                StatCard(Loc.s(R.string.playlists_label), "${stats.playlistCount}", Modifier.weight(1f))
+                                StatCard(Loc.s(R.string.tracks_label), "${stats.trackCount}", Modifier.weight(1f))
                             }
                             if (stats.topArtists.isNotEmpty()) {
                                 SectionTitle(
-                                    title = "Топ исполнителей",
+                                    title = Loc.s(R.string.top_artists),
                                     modifier = Modifier.fillMaxWidth(),
                                     trailing = {
                                         IconButton(onClick = { chartOpen = true }) {
                                             Icon(
                                                 Icons.Filled.MoreVert,
-                                                contentDescription = "График",
+                                                contentDescription = Loc.s(R.string.chart),
                                                 tint = colors.muted,
                                             )
                                         }
@@ -155,7 +157,7 @@ fun StatisticsScreen(vm: AppViewModel) {
                                 }
                             }
                             if (ui.favoriteArtists.isNotEmpty()) {
-                                SectionTitle("Любимые исполнители", modifier = Modifier.fillMaxWidth())
+                                SectionTitle(Loc.s(R.string.favorite_artists), modifier = Modifier.fillMaxWidth())
                                 ui.favoriteArtists.forEach { artist ->
                                     ArtistRow(artist.name, artist.hours, artist.avatarUrl)
                                 }
@@ -163,14 +165,14 @@ fun StatisticsScreen(vm: AppViewModel) {
                         }
                     } else {
                         SectionTitle(
-                            title = "Лучшие пользователи",
-                            subtitle = "По прослушанному времени",
+                            title = Loc.s(R.string.top_users),
+                            subtitle = Loc.s(R.string.by_listen_time),
                             modifier = Modifier.fillMaxWidth(),
                         )
                         UsersLeaderboard(ui.leaderboard, ui.leaderboardLoading)
                         val rank = ui.leaderboardMe?.rank ?: 0
                         Text(
-                            "Ваше место: " + if (rank > 0) "#$rank" else "—",
+                            Loc.s(R.string.your_rank) + if (rank > 0) "#$rank" else "—",
                             color = colors.text,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
@@ -198,7 +200,7 @@ fun StatisticsScreen(vm: AppViewModel) {
 @Composable
 private fun StatsTabs(selected: Int, onSelect: (Int) -> Unit) {
     val colors = LocalMfColors.current
-    val labels = listOf("Моя статистика", "Статистика пользователей")
+    val labels = listOf(Loc.s(R.string.my_stats), Loc.s(R.string.user_statistics))
     val currentSelected by rememberUpdatedState(selected)
     val currentOnSelect by rememberUpdatedState(onSelect)
     val scope = rememberCoroutineScope()
@@ -315,7 +317,7 @@ private fun ArtistRow(name: String, hours: Double, avatarUrl: String) {
                 Text(name, color = colors.text, fontWeight = FontWeight.SemiBold)
                 if (hours > 0.0) {
                     Text(
-                        "$hours ч",
+                        Loc.s(R.string.hours_count, hours),
                         color = colors.muted,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -333,7 +335,7 @@ private fun UsersLeaderboard(entries: List<LeaderboardEntry>, loading: Boolean) 
     val third = entries.getOrNull(2)
     GlassSurface(Modifier.fillMaxWidth()) {
         if (first == null) {
-            Text(if (loading) "Загрузка…" else "Пока нет данных", color = colors.muted)
+            Text(if (loading) Loc.s(R.string.loading) else Loc.s(R.string.no_data), color = colors.muted)
         } else {
             Row(
                 Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -394,7 +396,7 @@ private fun PodiumColumn(
             overflow = TextOverflow.Ellipsis,
         )
         Text(
-            "${entry?.hours ?: 0.0} ч",
+            Loc.s(R.string.hours_count, entry?.hours ?: 0.0),
             color = colors.muted,
             style = MaterialTheme.typography.labelSmall,
         )
@@ -453,7 +455,7 @@ private fun LeaderboardRow(entry: LeaderboardEntry) {
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                "${entry.hours} ч",
+                Loc.s(R.string.hours_count, entry.hours),
                 color = colors.muted,
                 style = MaterialTheme.typography.bodySmall,
             )
@@ -470,7 +472,7 @@ private fun ArtistChartDialog(
     val maxHours = artists.maxOfOrNull { it.hours }?.takeIf { it > 0.0 } ?: 1.0
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Топ исполнителей") },
+        title = { Text(Loc.s(R.string.top_artists)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 artists.forEachIndexed { index, artist ->
@@ -506,7 +508,7 @@ private fun ArtistChartDialog(
                                 modifier = Modifier.weight(1f),
                             )
                             Text(
-                                "${artist.hours} ч",
+                                Loc.s(R.string.hours_count, artist.hours),
                                 color = colors.muted,
                                 style = MaterialTheme.typography.bodySmall,
                             )
@@ -531,7 +533,7 @@ private fun ArtistChartDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Закрыть") }
+            TextButton(onClick = onDismiss) { Text(Loc.s(R.string.close)) }
         },
     )
 }

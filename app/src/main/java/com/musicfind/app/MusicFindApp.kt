@@ -11,6 +11,7 @@ class MusicFindApp : Application() {
     override fun onCreate() {
         super.onCreate()
         AppGraph.init(this)
+        com.musicfind.app.util.LocaleHelper.apply(this, AppGraph.session.language)
     }
 }
 

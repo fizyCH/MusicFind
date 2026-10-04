@@ -1,6 +1,8 @@
 package com.musicfind.app.ui.components
 
 import androidx.compose.animation.AnimatedContent
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -206,12 +208,8 @@ fun PlayerBar(
                         modifier = Modifier.basicMarquee(),
                     )
                     Text(
-                        if (state.isPreparing && state.preparingLabel.isNotBlank()) {
-                            state.preparingLabel
-                        } else {
-                            shown.artist.ifBlank { "Unknown" }
-                        },
-                        color = if (state.isPreparing) playerAccent else colors.muted,
+                        if (!state.error.isNullOrBlank()) state.error ?: "" else shown.artist.ifBlank { "Unknown" },
+                        color = if (!state.error.isNullOrBlank()) MaterialTheme.colorScheme.error else colors.muted,
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
                         modifier = Modifier.basicMarquee(),
@@ -220,7 +218,7 @@ fun PlayerBar(
                 IconButton(onClick = { PlayerController.toggleCurrentFavorite() }) {
                     Icon(
                         if (state.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = "Нравится",
+                        contentDescription = Loc.s(R.string.favorite),
                         tint = if (state.isFavorite) playerAccent else colors.muted,
                     )
                 }
@@ -244,7 +242,7 @@ fun PlayerBar(
                     }
                 }
                 IconButton(onClick = onExpand) {
-                    Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Развернуть", tint = colors.muted)
+                    Icon(Icons.Filled.KeyboardArrowUp, contentDescription = Loc.s(R.string.expand), tint = colors.muted)
                 }
             }
         }
@@ -341,7 +339,7 @@ private fun rememberLyrics(track: Track?): LyricsUi {
                 state = LyricsUi(lines = it.synced.orEmpty(), plain = it.plain, loading = false)
             }
             .onFailure {
-                state = LyricsUi(loading = false, error = it.message ?: "Текст недоступен")
+                state = LyricsUi(loading = false, error = it.message ?: Loc.s(R.string.lyrics_unavailable))
             }
     }
     return state
@@ -442,11 +440,12 @@ fun FullPlayer(
                     },
                 ),
         ) {
+            val contextLabel = state.contextLabel
             Text(
-                if (!state.contextLabel.isNullOrBlank()) {
-                    "Сейчас играет ${state.contextLabel}"
+                if (!contextLabel.isNullOrBlank()) {
+                    Loc.s(R.string.now_playing_context, contextLabel)
                 } else {
-                    "Сейчас играет"
+                    Loc.s(R.string.now_playing)
                 },
                 color = colors.muted,
                 style = MaterialTheme.typography.labelLarge,
@@ -462,13 +461,13 @@ fun FullPlayer(
                 onClick = onClose,
                 modifier = Modifier.align(Alignment.CenterStart),
             ) {
-                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Свернуть", tint = colors.muted)
+                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = Loc.s(R.string.collapse), tint = colors.muted)
             }
             IconButton(
                 onClick = { onAddToPlaylist(track) },
                 modifier = Modifier.align(Alignment.CenterEnd),
             ) {
-                Icon(Icons.Filled.PlaylistAdd, contentDescription = "В плейлист", tint = colors.muted)
+                Icon(Icons.Filled.PlaylistAdd, contentDescription = Loc.s(R.string.to_playlist), tint = colors.muted)
             }
         }
 
@@ -579,7 +578,7 @@ fun FullPlayer(
                 ) {
                     Icon(
                         painter = androidx.compose.ui.res.painterResource(com.musicfind.app.R.drawable.ic_lyrics_t),
-                        contentDescription = "Текст",
+                        contentDescription = Loc.s(R.string.lyrics),
                         tint = if (showLyrics) playerAccent else colors.text,
                         modifier = Modifier.size(22.dp),
                     )
@@ -608,18 +607,18 @@ fun FullPlayer(
             IconButton(onClick = { PlayerController.toggleCurrentFavorite() }) {
                 Icon(
                     if (state.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription = "Нравится",
+                    contentDescription = Loc.s(R.string.favorite),
                     tint = if (state.isFavorite) playerAccent else colors.muted,
                 )
             }
         }
 
         Spacer(Modifier.height(8.dp))
-        if (state.isPreparing) {
+        if (!state.error.isNullOrBlank()) {
             Text(
-                state.preparingLabel.ifBlank { "Подготовка трека…" },
-                color = playerAccent,
-                style = MaterialTheme.typography.labelMedium,
+                state.error ?: "",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
             )
@@ -680,7 +679,7 @@ fun FullPlayer(
             IconButton(onClick = { PlayerController.toggleShuffle() }) {
                 Icon(
                     Icons.Filled.Shuffle,
-                    contentDescription = "Перемешать",
+                    contentDescription = Loc.s(R.string.shuffle),
                     tint = if (state.shuffle) playerAccent else colors.muted,
                     modifier = Modifier.graphicsLayer {
                         rotationZ = shuffleSpin.value * 28f
@@ -693,7 +692,7 @@ fun FullPlayer(
             IconButton(onClick = { PlayerController.previous() }) {
                 Icon(
                     Icons.Filled.SkipPrevious,
-                    contentDescription = "Назад",
+                    contentDescription = Loc.s(R.string.back),
                     tint = colors.text,
                     modifier = Modifier.size(36.dp),
                 )
@@ -726,7 +725,7 @@ fun FullPlayer(
             IconButton(onClick = { PlayerController.next() }) {
                 Icon(
                     Icons.Filled.SkipNext,
-                    contentDescription = "Вперёд",
+                    contentDescription = Loc.s(R.string.forward),
                     tint = colors.text,
                     modifier = Modifier.size(36.dp),
                 )
@@ -735,7 +734,7 @@ fun FullPlayer(
                 val icon = if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat
                 Icon(
                     icon,
-                    contentDescription = "Повтор",
+                    contentDescription = Loc.s(R.string.repeat),
                     tint = if (state.repeatMode == RepeatMode.OFF) colors.muted else playerAccent,
                     modifier = Modifier.graphicsLayer {
                         val spread = repeatSpread.value
@@ -755,7 +754,7 @@ fun FullPlayer(
                     .padding(horizontal = 18.dp, vertical = 12.dp),
             ) {
                 Text(
-                    (if (seekFeedback > 0) "+" else "−") + "${kotlin.math.abs(seekFeedback)} с",
+                    (if (seekFeedback > 0) "+" else "−") + Loc.s(R.string.seconds_count, kotlin.math.abs(seekFeedback)),
                     color = colors.text,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
@@ -816,7 +815,7 @@ private fun AnimatedPlayPauseIcon(
     ) { playing ->
         Icon(
             if (playing) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-            contentDescription = if (playing) "Пауза" else "Играть",
+            contentDescription = if (playing) Loc.s(R.string.pause) else Loc.s(R.string.play),
             tint = tint,
             modifier = Modifier.size(iconSize),
         )
@@ -986,7 +985,7 @@ private fun LyricsContent(
                     )
                 }
             }
-            else -> Text("Текст не найден", color = colors.muted)
+            else -> Text(Loc.s(R.string.lyrics_not_found), color = colors.muted)
         }
 
         if (startCountdown != null && !countdownDetached) {

@@ -13,8 +13,8 @@ android {
         applicationId = "com.musicfind.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 62
-        versionName = "1.2.59"
+        versionCode = 71
+        versionName = "1.2.68"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -76,6 +76,7 @@ dependencies {
     implementation("androidx.palette:palette-ktx:1.0.0")
 
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

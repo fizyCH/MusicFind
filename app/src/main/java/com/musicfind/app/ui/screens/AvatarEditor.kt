@@ -1,6 +1,8 @@
 package com.musicfind.app.ui.screens
 
 import android.graphics.Bitmap
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.graphics.Paint
@@ -71,7 +73,7 @@ fun AvatarEditorDialog(
 
     AlertDialog(
         onDismissRequest = { if (!saving) onDismiss() },
-        title = { Text("Аватар") },
+        title = { Text(Loc.s(R.string.avatar)) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
@@ -115,7 +117,7 @@ fun AvatarEditorDialog(
                 }
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "Перетаскивайте и масштабируйте фото",
+                    Loc.s(R.string.avatar_editor_hint),
                     color = colors.muted,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -134,10 +136,10 @@ fun AvatarEditorDialog(
                     result.recycle()
                     onSave(file)
                 },
-            ) { Text("Сохранить") }
+            ) { Text(Loc.s(R.string.save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !saving) { Text("Отмена") }
+            TextButton(onClick = onDismiss, enabled = !saving) { Text(Loc.s(R.string.cancel)) }
         },
     )
 }

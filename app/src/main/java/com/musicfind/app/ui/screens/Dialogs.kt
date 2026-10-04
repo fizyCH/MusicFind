@@ -1,6 +1,8 @@
 package com.musicfind.app.ui.screens
 
 import android.net.Uri
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -68,10 +70,17 @@ fun SettingsDialog(
     val accent by SettingsController.accent.collectAsState()
     val bitrate by SettingsController.bitrate.collectAsState()
     val seekStep by SettingsController.seekStep.collectAsState()
+    val language by SettingsController.language.collectAsState()
     val colors = LocalMfColors.current
     val context = androidx.compose.ui.platform.LocalContext.current
 
     val accents = listOf("#22C55E", "#10B981", "#38BDF8", "#A855F7", "#F59E0B", "#F43F5E")
+
+    fun applyLanguage(value: String) {
+        SettingsController.setLanguage(value)
+        com.musicfind.app.util.LocaleHelper.apply(context, value)
+        (context as? android.app.Activity)?.recreate()
+    }
 
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
@@ -92,19 +101,19 @@ fun SettingsDialog(
                     if (info.versionCode > Updater.currentVersionCode()) {
                         availableUpdate = info
                     } else {
-                        updateMessage = "Установлена последняя версия"
+                        updateMessage = Loc.s(R.string.latest_version)
                     }
                 }
                 .onFailure {
                     checking = false
-                    updateMessage = it.message ?: "Не удалось проверить обновление"
+                    updateMessage = it.message ?: Loc.s(R.string.update_check_failed)
                 }
         }
     }
 
     fun installUpdate(info: UpdateInfo) {
         if (!Updater.canInstallPackages(context)) {
-            updateMessage = "Разрешите установку из этого источника"
+            updateMessage = Loc.s(R.string.allow_install_source)
             Updater.openInstallPermissionSettings(context)
             return
         }
@@ -119,24 +128,24 @@ fun SettingsDialog(
                 }
                 .onFailure {
                     downloading = false
-                    updateMessage = it.message ?: "Ошибка загрузки обновления"
+                    updateMessage = it.message ?: Loc.s(R.string.update_download_error)
                 }
         }
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Настройки") },
+        title = { Text(Loc.s(R.string.settings)) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Text("Сервер", color = colors.muted, style = MaterialTheme.typography.labelMedium)
+                Text(Loc.s(R.string.server), color = colors.muted, style = MaterialTheme.typography.labelMedium)
                 OutlinedTextField(
                     value = serverUrl,
                     onValueChange = { serverUrl = it },
-                    label = { Text("Адрес сервера") },
+                    label = { Text(Loc.s(R.string.server_address)) },
                     placeholder = { Text("https://example.com") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -151,13 +160,18 @@ fun SettingsDialog(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Сохранить сервер") }
-                Text("Тема", color = colors.muted, style = MaterialTheme.typography.labelMedium)
+                ) { Text(Loc.s(R.string.save_server)) }
+                Text(Loc.s(R.string.language), color = colors.muted, style = MaterialTheme.typography.labelMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ThemeChip("Тёмная", theme == "dark") { SettingsController.setTheme("dark") }
-                    ThemeChip("Светлая", theme == "light") { SettingsController.setTheme("light") }
+                    ThemeChip(Loc.s(R.string.language_en), language == "en") { applyLanguage("en") }
+                    ThemeChip(Loc.s(R.string.language_ru), language == "ru") { applyLanguage("ru") }
                 }
-                Text("Акцент", color = colors.muted, style = MaterialTheme.typography.labelMedium)
+                Text(Loc.s(R.string.theme), color = colors.muted, style = MaterialTheme.typography.labelMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ThemeChip(Loc.s(R.string.theme_dark), theme == "dark") { SettingsController.setTheme("dark") }
+                    ThemeChip(Loc.s(R.string.theme_light), theme == "light") { SettingsController.setTheme("light") }
+                }
+                Text(Loc.s(R.string.accent), color = colors.muted, style = MaterialTheme.typography.labelMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     accents.forEach { value ->
                         val color = com.musicfind.app.ui.theme.parseHexColor(value)
@@ -176,13 +190,13 @@ fun SettingsDialog(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Показывать битрейт", modifier = Modifier.weight(1f))
+                    Text(Loc.s(R.string.show_bitrate), modifier = Modifier.weight(1f))
                     Switch(checked = bitrate, onCheckedChange = { SettingsController.setBitrate(it) })
                 }
-                Text("Шаг перемотки (двойной тап)", color = colors.muted, style = MaterialTheme.typography.labelMedium)
+                Text(Loc.s(R.string.seek_step), color = colors.muted, style = MaterialTheme.typography.labelMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(5, 10, 15, 30).forEach { value ->
-                        ThemeChip("$value с", seekStep == value) { SettingsController.setSeekStep(value) }
+                        ThemeChip(Loc.s(R.string.seconds_count, value), seekStep == value) { SettingsController.setSeekStep(value) }
                     }
                 }
                 TextButton(
@@ -190,16 +204,16 @@ fun SettingsDialog(
                 ) {
                     Text(
                         if (com.musicfind.app.util.PowerUtils.isIgnoringBatteryOptimizations(context)) {
-                            "Фоновое воспроизведение: включено"
+                            Loc.s(R.string.background_playback_on)
                         } else {
-                            "Разрешить фоновое воспроизведение"
+                            Loc.s(R.string.allow_background_playback)
                         },
                         color = colors.accent,
                     )
                 }
-                Text("Обновление", color = colors.muted, style = MaterialTheme.typography.labelMedium)
+                Text(Loc.s(R.string.update), color = colors.muted, style = MaterialTheme.typography.labelMedium)
                 Text(
-                    "Версия ${Updater.currentVersionName()} (${Updater.currentVersionCode()})",
+                    Loc.s(R.string.version_full, Updater.currentVersionName(), Updater.currentVersionCode()),
                     color = colors.text,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -211,7 +225,7 @@ fun SettingsDialog(
                             color = colors.accent,
                         )
                         Text(
-                            "Загрузка… ${(downloadProgress * 100).toInt()}%",
+                            Loc.s(R.string.loading_download_percent, (downloadProgress * 100).toInt()),
                             color = colors.muted,
                             style = MaterialTheme.typography.bodySmall,
                         )
@@ -219,7 +233,7 @@ fun SettingsDialog(
                     availableUpdate != null -> {
                         val info = availableUpdate!!
                         Text(
-                            "Доступна версия ${info.versionName}" +
+                            Loc.s(R.string.version_available, info.versionName) +
                                 if (info.notes.isNotBlank()) "\n${info.notes}" else "",
                             color = colors.accent,
                             style = MaterialTheme.typography.bodySmall,
@@ -227,7 +241,7 @@ fun SettingsDialog(
                         Button(
                             onClick = { installUpdate(info) },
                             modifier = Modifier.fillMaxWidth(),
-                        ) { Text("Скачать и установить") }
+                        ) { Text(Loc.s(R.string.download_and_install)) }
                     }
                     else -> {
                         updateMessage?.let {
@@ -235,19 +249,19 @@ fun SettingsDialog(
                         }
                         TextButton(onClick = { checkUpdate() }, enabled = !checking) {
                             Text(
-                                if (checking) "Проверяем…" else "Проверить обновление",
+                                if (checking) Loc.s(R.string.checking) else Loc.s(R.string.check_updates),
                                 color = colors.accent,
                             )
                         }
                     }
                 }
                 TextButton(onClick = onLogout) {
-                    Text("Выйти из аккаунта", color = MaterialTheme.colorScheme.error)
+                    Text(Loc.s(R.string.logout), color = MaterialTheme.colorScheme.error)
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Готово") }
+            TextButton(onClick = onDismiss) { Text(Loc.s(R.string.done)) }
         },
     )
 }
@@ -285,7 +299,7 @@ fun ProfileDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(profile?.firstName?.ifBlank { profile?.username } ?: "Профиль") },
+        title = { Text(profile?.firstName?.ifBlank { profile?.username } ?: Loc.s(R.string.profile)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -303,7 +317,7 @@ fun ProfileDialog(
                 )
                 if (profile?.telegramId != null) {
                     Text(
-                        "Telegram привязан (ID ${profile.telegramId})",
+                        Loc.s(R.string.telegram_linked, profile.telegramId),
                         color = colors.muted,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -312,20 +326,20 @@ fun ProfileDialog(
                     onClick = { picker.launch("image/*") },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Изменить аватар")
+                    Text(Loc.s(R.string.change_avatar))
                 }
                 if (!avatarUrl.isNullOrBlank()) {
                     TextButton(
                         onClick = { vm.deleteAvatar() },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text("Удалить аватар", color = MaterialTheme.colorScheme.error)
+                        Text(Loc.s(R.string.delete_avatar), color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Закрыть") }
+            TextButton(onClick = onDismiss) { Text(Loc.s(R.string.close)) }
         },
     )
 
@@ -354,7 +368,7 @@ fun PlaylistPickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("В плейлист") },
+        title = { Text(Loc.s(R.string.to_playlist)) },
         text = {
             Column(
                 Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState()),
@@ -382,7 +396,7 @@ fun PlaylistPickerDialog(
                 OutlinedTextField(
                     value = newName,
                     onValueChange = { newName = it },
-                    label = { Text("Новый плейлист") },
+                    label = { Text(Loc.s(R.string.new_playlist)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -393,9 +407,9 @@ fun PlaylistPickerDialog(
                 onClick = { if (newName.isNotBlank()) onCreate(newName.trim()) },
                 enabled = newName.isNotBlank(),
                 colors = ButtonDefaults.textButtonColors(contentColor = colors.accent),
-            ) { Text("Создать и добавить") }
+            ) { Text(Loc.s(R.string.create_and_add)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(Loc.s(R.string.cancel)) } },
     )
 }
 
@@ -409,20 +423,20 @@ fun EditTrackDialog(
     var artist by remember { mutableStateOf(track.artist) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Изменить трек") },
+        title = { Text(Loc.s(R.string.edit_track)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Название") },
+                    label = { Text(Loc.s(R.string.title_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = artist,
                     onValueChange = { artist = it },
-                    label = { Text("Автор") },
+                    label = { Text(Loc.s(R.string.artist)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -432,9 +446,9 @@ fun EditTrackDialog(
             TextButton(
                 onClick = { onSave(title.trim(), artist.trim()) },
                 enabled = title.isNotBlank() || artist.isNotBlank(),
-            ) { Text("Сохранить") }
+            ) { Text(Loc.s(R.string.save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(Loc.s(R.string.cancel)) } },
     )
 }
 
@@ -447,16 +461,16 @@ fun CoverDialog(
     var value by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Обложка плейлиста") },
+        title = { Text(Loc.s(R.string.playlist_cover)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(onClick = onPickGallery, modifier = Modifier.fillMaxWidth()) {
-                    Text("Выбрать из галереи")
+                    Text(Loc.s(R.string.choose_from_gallery))
                 }
                 OutlinedTextField(
                     value = value,
                     onValueChange = { value = it },
-                    label = { Text("Или ссылка (http/https)") },
+                    label = { Text(Loc.s(R.string.or_link)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -466,8 +480,8 @@ fun CoverDialog(
             TextButton(
                 onClick = { onSubmit(value.trim()) },
                 enabled = value.isNotBlank(),
-            ) { Text("Сохранить") }
+            ) { Text(Loc.s(R.string.save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(Loc.s(R.string.cancel)) } },
     )
 }

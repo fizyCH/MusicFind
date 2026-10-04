@@ -1,6 +1,8 @@
 package com.musicfind.app.ui.screens
 
 import androidx.compose.foundation.background
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -107,14 +109,14 @@ private fun OfflinePlaylistList(
     ) {
         item {
             SectionTitle(
-                title = "Скачанные треки",
-                subtitle = "Доступны без интернета",
+                title = Loc.s(R.string.downloaded_tracks),
+                subtitle = Loc.s(R.string.available_offline),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         if (names.isEmpty()) {
             item {
-                Text("Пока ничего не скачано", color = colors.muted)
+                Text(Loc.s(R.string.nothing_downloaded), color = colors.muted)
             }
         }
         itemsIndexed(names) { _, name ->
@@ -166,7 +168,7 @@ private fun OfflinePlaylistDetail(
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { onOpenPlaylist(null) }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Назад", tint = colors.text)
+                    Icon(Icons.Filled.ArrowBack, contentDescription = Loc.s(R.string.back), tint = colors.text)
                 }
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -177,7 +179,7 @@ private fun OfflinePlaylistDetail(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        "${tracks.size} треков",
+                        Loc.s(R.string.tracks_count, tracks.size),
                         color = colors.muted,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -221,14 +223,14 @@ private fun PlaylistList(
     ) {
         item {
             SectionTitle(
-                title = "Плейлисты",
-                subtitle = "Твоя коллекция",
+                title = Loc.s(R.string.playlists),
+                subtitle = Loc.s(R.string.your_collection),
                 modifier = Modifier.fillMaxWidth(),
                 trailing = {
                     IconButton(onClick = { createOpen = true }) {
                         Icon(
                             Icons.Filled.Add,
-                            contentDescription = "Создать",
+                            contentDescription = Loc.s(R.string.create),
                             tint = LocalMfColors.current.accent,
                         )
                     }
@@ -316,7 +318,7 @@ private fun PlaylistCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    downloadLabel?.let { "Скачивание… $it" } ?: "${playlist.trackCount} треков",
+                    downloadLabel?.let { Loc.s(R.string.downloading_item, it) } ?: Loc.s(R.string.tracks_count, playlist.trackCount),
                     color = if (downloading) colors.accent else colors.muted,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -328,7 +330,7 @@ private fun PlaylistCard(
                     IconButton(onClick = onCancelDownload, modifier = Modifier.size(36.dp)) {
                         Icon(
                             Icons.Filled.Close,
-                            contentDescription = "Отменить скачивание",
+                            contentDescription = Loc.s(R.string.cancel_download),
                             tint = colors.error,
                             modifier = Modifier.size(20.dp),
                         )
@@ -339,7 +341,7 @@ private fun PlaylistCard(
                     IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(40.dp)) {
                         Icon(
                             Icons.Filled.MoreVert,
-                            contentDescription = "Ещё",
+                            contentDescription = Loc.s(R.string.more),
                             tint = colors.muted,
                             modifier = Modifier.size(22.dp),
                         )
@@ -348,7 +350,7 @@ private fun PlaylistCard(
                         // Download and delete-from-device are mutually exclusive.
                         if (isDownloaded) {
                             DropdownMenuItem(
-                                text = { Text("Удалить с устройства") },
+                                text = { Text(Loc.s(R.string.delete_from_device)) },
                                 leadingIcon = {
                                     Icon(Icons.Filled.DeleteForever, contentDescription = null, tint = colors.error)
                                 },
@@ -359,7 +361,7 @@ private fun PlaylistCard(
                             )
                         } else {
                             DropdownMenuItem(
-                                text = { Text("Скачать плейлист") },
+                                text = { Text(Loc.s(R.string.download_playlist)) },
                                 leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
                                 enabled = downloadEnabled,
                                 onClick = {
@@ -369,7 +371,7 @@ private fun PlaylistCard(
                             )
                         }
                         DropdownMenuItem(
-                            text = { Text("Обложка") },
+                            text = { Text(Loc.s(R.string.cover)) },
                             leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
                             onClick = {
                                 menuOpen = false
@@ -378,7 +380,7 @@ private fun PlaylistCard(
                         )
                         if (onDelete != null) {
                             DropdownMenuItem(
-                                text = { Text("Удалить плейлист") },
+                                text = { Text(Loc.s(R.string.delete_playlist)) },
                                 leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
                                 onClick = {
                                     menuOpen = false
@@ -422,7 +424,7 @@ private fun PlaylistDetail(
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { onOpenPlaylist(null) }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Назад", tint = colors.text)
+                    Icon(Icons.Filled.ArrowBack, contentDescription = Loc.s(R.string.back), tint = colors.text)
                 }
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -434,9 +436,9 @@ private fun PlaylistDetail(
                     )
                     Text(
                         if (downloading) {
-                            "Скачивание… ${ui.playlistDownloadDone}/${ui.playlistDownloadTotal}"
+                            Loc.s(R.string.downloading_progress, ui.playlistDownloadDone, ui.playlistDownloadTotal)
                         } else {
-                            "${playlist?.trackCount ?: 0} треков"
+                            Loc.s(R.string.tracks_count, playlist?.trackCount ?: 0)
                         },
                         color = if (downloading) colors.accent else colors.muted,
                         style = MaterialTheme.typography.bodySmall,
@@ -451,7 +453,7 @@ private fun PlaylistDetail(
                         ) {
                             Icon(
                                 Icons.Filled.Close,
-                                contentDescription = "Отменить скачивание",
+                                contentDescription = Loc.s(R.string.cancel_download),
                                 tint = colors.error,
                                 modifier = Modifier.size(20.dp),
                             )
@@ -464,7 +466,7 @@ private fun PlaylistDetail(
                     ) {
                         Icon(
                             Icons.Filled.Download,
-                            contentDescription = "Скачать плейлист",
+                            contentDescription = Loc.s(R.string.download_playlist),
                             tint = if (ui.online && tracks.isNotEmpty()) colors.accent else colors.muted,
                         )
                     }
@@ -513,7 +515,7 @@ private fun PlaylistDetail(
         if (tracks.isEmpty()) {
             item {
                 Text(
-                    "Плейлист пуст",
+                    Loc.s(R.string.playlist_empty),
                     color = colors.muted,
                     modifier = Modifier.padding(vertical = 24.dp),
                 )
@@ -541,13 +543,13 @@ private fun CreatePlaylistDialog(
     var name by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Новый плейлист") },
+        title = { Text(Loc.s(R.string.new_playlist)) },
         text = {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 singleLine = true,
-                label = { Text("Название") },
+                label = { Text(Loc.s(R.string.title_label)) },
             )
         },
         confirmButton = {
@@ -555,11 +557,11 @@ private fun CreatePlaylistDialog(
                 onClick = { if (name.isNotBlank()) onCreate(name.trim()) },
                 colors = ButtonDefaults.textButtonColors(contentColor = LocalMfColors.current.accent),
             ) {
-                Text("Создать")
+                Text(Loc.s(R.string.create))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Отмена") }
+            TextButton(onClick = onDismiss) { Text(Loc.s(R.string.cancel)) }
         },
     )
 }

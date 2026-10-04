@@ -32,6 +32,10 @@ class SessionStore(context: Context) {
         get() = prefs.getInt(KEY_SEEK_STEP, 5).coerceIn(1, 120)
         set(value) = prefs.edit().putInt(KEY_SEEK_STEP, value.coerceIn(1, 120)).apply()
 
+    var language: String
+        get() = (prefs.getString(KEY_LANGUAGE, "en") ?: "en").let { if (it == "system") "en" else it }
+        set(value) = prefs.edit().putString(KEY_LANGUAGE, value).apply()
+
     val isLoggedIn: Boolean
         get() = token.isNotBlank() && serverUrl.isNotBlank()
 
@@ -73,6 +77,7 @@ class SessionStore(context: Context) {
         private const val KEY_ACCENT = "accent_color"
         private const val KEY_BITRATE = "show_bitrate"
         private const val KEY_SEEK_STEP = "seek_step_seconds"
+        private const val KEY_LANGUAGE = "language"
         private const val COVER_PREFIX = "cover_"
         private const val KEY_PLAYER_STATE = "player_state"
     }

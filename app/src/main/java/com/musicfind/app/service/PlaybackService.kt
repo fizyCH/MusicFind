@@ -1,6 +1,7 @@
 package com.musicfind.app.service
 
 import android.app.Notification
+import com.musicfind.app.util.Loc
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -120,7 +121,7 @@ class PlaybackService : MediaSessionService() {
     private fun favoriteButton(favorite: Boolean): CommandButton {
         val command = SessionCommand(ACTION_FAVORITE, Bundle.EMPTY)
         return CommandButton.Builder()
-            .setDisplayName(if (favorite) "Убрать из избранного" else "Нравится")
+            .setDisplayName(if (favorite) Loc.s(R.string.remove_from_favorites) else Loc.s(R.string.favorite))
             .setIconResId(if (favorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border)
             .setSessionCommand(command)
             .build()
@@ -161,7 +162,7 @@ class PlaybackService : MediaSessionService() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("MusicFind")
-            .setContentText("Воспроизведение")
+            .setContentText(Loc.s(R.string.playback_channel))
             .setContentIntent(openIntent)
             .setOngoing(true)
             .setSilent(true)
@@ -175,10 +176,10 @@ class PlaybackService : MediaSessionService() {
         if (manager.getNotificationChannel(CHANNEL_ID) != null) return
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Воспроизведение",
+            Loc.s(R.string.playback_channel),
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
-            description = "Фоновое воспроизведение музыки"
+            description = Loc.s(R.string.background_playback_channel)
             setShowBadge(false)
             setSound(null, null)
             enableVibration(false)

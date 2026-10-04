@@ -1,6 +1,8 @@
 package com.musicfind.app.ui.screens
 
 import android.annotation.SuppressLint
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import android.net.Uri
 import android.webkit.CookieManager
 import android.webkit.WebView
@@ -98,7 +100,7 @@ fun LoginScreen(
                 .windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.safeDrawing)
                 .padding(8.dp),
         ) {
-            androidx.compose.material3.Text("Сменить сервер", color = androidx.compose.ui.graphics.Color(0xFF64748B))
+            androidx.compose.material3.Text(Loc.s(R.string.change_server), color = androidx.compose.ui.graphics.Color(0xFF64748B))
         }
     }
 }

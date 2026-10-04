@@ -22,6 +22,9 @@ object SettingsController {
     private val _seekStep = MutableStateFlow(AppGraph.session.seekStepSeconds)
     val seekStep: StateFlow<Int> = _seekStep.asStateFlow()
 
+    private val _language = MutableStateFlow(AppGraph.session.language)
+    val language: StateFlow<String> = _language.asStateFlow()
+
     fun setTheme(value: String) {
         AppGraph.session.themeMode = value
         _theme.value = value
@@ -40,6 +43,11 @@ object SettingsController {
     fun setSeekStep(value: Int) {
         AppGraph.session.seekStepSeconds = value
         _seekStep.value = value
+    }
+
+    fun setLanguage(value: String) {
+        AppGraph.session.language = value
+        _language.value = value
     }
 
     fun isLight(): Boolean = _theme.value == "light"

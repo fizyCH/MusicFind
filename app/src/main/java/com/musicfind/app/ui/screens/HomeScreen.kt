@@ -1,6 +1,8 @@
 package com.musicfind.app.ui.screens
 
 import androidx.activity.compose.BackHandler
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -85,10 +87,10 @@ import com.musicfind.app.ui.theme.LocalMfColors
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
-enum class HomeTab(val label: String) {
-    Search("Поиск"),
-    Playlists("Плейлисты"),
-    Statistics("Статистика"),
+enum class HomeTab {
+    Search,
+    Playlists,
+    Statistics,
 }
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
@@ -205,13 +207,17 @@ fun HomeScreen(
     }
     androidx.compose.runtime.LaunchedEffect(ui.error) {
         ui.error?.let {
-            snackbarHostState.showSnackbar(MfSnackbarVisuals(it, isError = true))
+            snackbarHostState.showSnackbar(
+                MfSnackbarVisuals(it, isError = true, duration = androidx.compose.material3.SnackbarDuration.Long),
+            )
             vm.setError(null)
         }
     }
     androidx.compose.runtime.LaunchedEffect(player.error) {
         player.error?.let {
-            snackbarHostState.showSnackbar(MfSnackbarVisuals(it, isError = true))
+            snackbarHostState.showSnackbar(
+                MfSnackbarVisuals(it, isError = true, duration = androidx.compose.material3.SnackbarDuration.Long),
+            )
             com.musicfind.app.player.PlayerController.consumeError()
         }
     }
@@ -229,7 +235,7 @@ fun HomeScreen(
                         ui.profile?.displayName?.takeIf { it.isNotBlank() },
                         ui.profile?.firstName?.takeIf { it.isNotBlank() },
                         ui.profile?.username?.takeIf { it.isNotBlank() },
-                    ).firstOrNull() ?: "Профиль",
+                    ).firstOrNull() ?: Loc.s(R.string.profile),
                     profilePhoto = ui.profile?.photoUrl?.takeIf { it.isNotBlank() }
                         ?: ui.account?.avatarUrl?.takeIf { it.isNotBlank() },
                     onProfile = { profileOpen = true },
@@ -238,7 +244,7 @@ fun HomeScreen(
 
                 if (!ui.online || !ui.serverReachable) {
                     OfflineBanner(
-                        title = if (!ui.online) "Нет интернета" else "Ошибка соединения с сервером",
+                        title = if (!ui.online) Loc.s(R.string.no_internet) else Loc.s(R.string.server_connection_error),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 4.dp),
@@ -451,7 +457,7 @@ private fun OfflineBanner(
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                "Доступны скачанные треки — открой «Плейлисты»",
+                Loc.s(R.string.offline_hint),
                 color = colors.muted,
                 style = MaterialTheme.typography.bodySmall,
             )
@@ -472,10 +478,10 @@ private fun HomeTopBar(    profileName: String,
     ) {
         Column(Modifier.weight(1f)) {
             Text("MusicFind", style = MaterialTheme.typography.titleLarge, color = colors.text)
-            Text("найди своё настроение", style = MaterialTheme.typography.labelSmall, color = colors.muted)
+            Text(Loc.s(R.string.mood_tagline), style = MaterialTheme.typography.labelSmall, color = colors.muted)
         }
         androidx.compose.material3.IconButton(onClick = onSettings) {
-            Icon(Icons.Filled.Settings, contentDescription = "Настройки", tint = colors.accent)
+            Icon(Icons.Filled.Settings, contentDescription = Loc.s(R.string.settings), tint = colors.accent)
         }
         Spacer(Modifier.size(4.dp))
         Box(
@@ -572,6 +578,11 @@ private fun BottomNavIsland(
                 tabs.forEach { item ->
                     val active = item == selected
                     val tint = if (active) colors.accent else colors.muted
+                    val label = when (item) {
+                        HomeTab.Search -> Loc.s(R.string.search)
+                        HomeTab.Playlists -> Loc.s(R.string.playlists)
+                        HomeTab.Statistics -> Loc.s(R.string.statistics)
+                    }
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -585,12 +596,12 @@ private fun BottomNavIsland(
                                 HomeTab.Playlists -> Icons.Filled.LibraryMusic
                                 HomeTab.Statistics -> Icons.Filled.BarChart
                             },
-                            contentDescription = item.label,
+                            contentDescription = label,
                             tint = tint,
                             modifier = Modifier.size(22.dp),
                         )
                         Text(
-                            item.label,
+                            label,
                             color = tint,
                             style = MaterialTheme.typography.labelSmall,
                             maxLines = 1,

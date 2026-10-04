@@ -1,6 +1,7 @@
 package com.musicfind.app.util
 
 import android.content.Context
+import com.musicfind.app.R
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -32,7 +33,7 @@ object Updater {
     suspend fun check(): Result<UpdateInfo> = withContext(Dispatchers.IO) {
         runCatching {
             val response = AppGraph.repository.appVersion().getOrThrow()
-            if (!response.ok) throw IllegalStateException(response.message ?: "Сервер не вернул версию")
+            if (!response.ok) throw IllegalStateException(response.message ?: Loc.s(R.string.server_no_version))
             UpdateInfo(
                 versionCode = response.versionCode,
                 versionName = response.versionName.ifBlank { "—" },
@@ -48,14 +49,14 @@ object Updater {
         info: UpdateInfo,
         onProgress: (Float) -> Unit,
     ): File = withContext(Dispatchers.IO) {
-        if (info.downloadUrl.isBlank()) throw IllegalStateException("Не указан адрес обновления")
+        if (info.downloadUrl.isBlank()) throw IllegalStateException(Loc.s(R.string.update_url_missing))
         val dir = File(context.cacheDir, "updates").apply { mkdirs() }
         dir.listFiles()?.forEach { runCatching { it.delete() } }
         val target = File(dir, "MusicFind-${info.versionName}.apk")
         val request = Request.Builder().url(info.downloadUrl).build()
         ApiClient.okHttp.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("HTTP ${response.code}")
-            val body = response.body ?: throw IllegalStateException("Пустой ответ")
+            val body = response.body ?: throw IllegalStateException(Loc.s(R.string.empty_response))
             val total = body.contentLength().takeIf { it > 0 } ?: info.size
             body.byteStream().use { input ->
                 target.outputStream().use { output ->
@@ -76,7 +77,7 @@ object Updater {
         }
         if (target.length() < 100_000) {
             target.delete()
-            throw IllegalStateException("Файл обновления повреждён")
+            throw IllegalStateException(Loc.s(R.string.update_file_corrupt))
         }
         target
     }

@@ -1,6 +1,8 @@
 package com.musicfind.app.player
 
 import android.util.Log
+import com.musicfind.app.R
+import com.musicfind.app.util.Loc
 import com.musicfind.app.AppGraph
 import com.musicfind.app.data.local.LocalLibrary
 import com.musicfind.app.data.model.MediaTrack
@@ -256,7 +258,7 @@ object PlayerController {
             durationMs = 0L,
             isPlaying = false,
             isPreparing = true,
-            preparingLabel = "Подготовка трека…",
+            preparingLabel = Loc.s(R.string.preparing_track),
             preparingProgress = -1f,
             error = null,
         )
@@ -293,19 +295,16 @@ object PlayerController {
                 // Keep the loading indicator until the player really starts (or errors),
                 // otherwise the ring disappears before audio is actually ready.
                 var waited = 0
-                while (waited < 20_000 &&
+                while (waited < 30_000 &&
                     _state.value.error == null &&
-                    !PlaybackService.isPlaying() &&
-                    PlaybackService.duration() <= 0L
+                    !PlaybackService.isPlaying()
                 ) {
                     delay(250)
                     waited += 250
                 }
-                val failed = _state.value.error == null &&
-                    !PlaybackService.isPlaying() &&
-                    PlaybackService.duration() <= 0L
+                val failed = _state.value.error == null && !PlaybackService.isPlaying()
                 val diag = buildString {
-                    append("Не удалось воспроизвести. service=")
+                    append(Loc.s(R.string.playback_failed))
                     append(PlaybackService.instance != null)
                     append(" dur=")
                     append(PlaybackService.duration())
@@ -317,7 +316,8 @@ object PlayerController {
                 _state.value = _state.value.copy(
                     isPreparing = false,
                     error = _state.value.error ?: if (failed) diag else null,
-                    durationMs = (media.durationSeconds ?: entry.track.durationValue ?: 0).toLong() * 1000L,
+                    durationMs = ((media.durationSeconds ?: entry.track.durationValue)?.toLong()?.times(1000L))
+                        ?: PlaybackService.duration(),
                 )
                 persist()
             } catch (c: kotlinx.coroutines.CancellationException) {
@@ -355,13 +355,17 @@ object PlayerController {
             )
         }
         Log.d("MusicFind", "resolveMedia: using SERVER for '${entry.track.artist} - ${entry.track.title}' (online=${AppGraph.isOnline()})")
-        return AppGraph.repository.resolveMedia(entry.track, entry.playlistName) { progress ->
-            _state.value = _state.value.copy(
-                isPreparing = true,
-                preparingLabel = "Загрузка ${progress.toInt()}%",
-                preparingProgress = progress.toFloat(),
-            )
-        }
+        return AppGraph.repository.resolveMedia(
+            entry.track,
+            entry.playlistName,
+            onProgress = { progress ->
+                _state.value = _state.value.copy(
+                    isPreparing = true,
+                    preparingLabel = Loc.s(R.string.loading_percent, progress.toInt()),
+                    preparingProgress = progress.toFloat(),
+                )
+            },
+        )
     }
 
     private fun handleEnded() {
