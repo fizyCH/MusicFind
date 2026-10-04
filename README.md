@@ -116,15 +116,3 @@ install.sh                  server installer (systemd)
   downloading, updating `yt-dlp` is the first thing to try.
 - If you want restricted content, put cookies in `server/data/yt_cookies.txt`
   and `server/data/sc_cookies.txt`.
-
-## Security
-
-- Don't commit `server/.env`, `server/data/`, or cookie files — they're already
-  in `.gitignore`.
-- Change `ADMIN_PASSWORD` after installing.
-- If you expose this to the internet, put it behind a reverse proxy with HTTPS.
-
-## License
-
-There isn't one yet — this is just a personal project. Add a license if you
-plan to reuse it.
