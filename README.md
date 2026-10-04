@@ -81,6 +81,44 @@ The important bits:
 | `AUTO_UPDATE` | `1` | auto-update yt-dlp/ffmpeg in the background |
 | `AUTO_UPDATE_INTERVAL_SECONDS` | `86400` | how often to check |
 
+## Running with Docker
+
+If you don't want to install Python on the host, there's a Dockerfile for the
+server:
+
+```bash
+docker compose up -d --build
+```
+
+This builds the image, exposes the API on port `8081`, keeps `server/data`
+(accounts, playlists, the database, avatars) on the host, and uses a named
+volume for the downloaded media cache.
+
+Set the admin password (and port) in a `.env` file next to `docker-compose.yml`:
+
+```env
+ADMIN_PASSWORD=something-secret
+PORT=8081
+```
+
+or pass it inline:
+
+```bash
+ADMIN_PASSWORD=something-secret docker compose up -d --build
+```
+
+Logs and shutdown:
+
+```bash
+docker compose logs -f
+docker compose down
+```
+
+Auto-updating yt-dlp/ffmpeg is off by default inside the container (rebuild the
+image to update); set `AUTO_UPDATE=1` if you want it anyway. Drop your built APK
+into `server/data/app/MusicFind.apk` on the host and the in-app updater will
+pick it up.
+
 ## Building the Android app
 
 ```bash

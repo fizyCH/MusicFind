@@ -1,0 +1,23 @@
+services:
+  musicfind:
+    build: .
+    image: musicfind-server
+    container_name: musicfind
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8081}:8081"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8081"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-change-me}"
+      APP_APK_PATH: /app/server/data/app/MusicFind.apk
+      AUTO_UPDATE: "${AUTO_UPDATE:-0}"
+      AUTO_UPDATE_INTERVAL_SECONDS: "86400"
+    volumes:
+      # accounts, playlists, database, avatars, uploaded APK
+      - ./server/data:/app/server/data
+      # downloaded media cache
+      - musicfind-media:/tmp/music
+
+volumes:
+  musicfind-media:

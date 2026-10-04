@@ -1,0 +1,27 @@
+.git
+.gitignore
+.github
+
+# Android app / gradle
+app/
+build/
+.gradle/
+.kotlin/
+local.properties
+*.apk
+*.aab
+*.iml
+.idea/
+
+# server runtime / secrets
+server/.venv/
+server/data/
+server/.env
+server/.cookies_runtime/
+server/__pycache__/
+**/__pycache__/
+server/*cookies*.txt
+
+*.log
+README.md
+install.sh
