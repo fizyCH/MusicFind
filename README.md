@@ -37,6 +37,17 @@ cd musicfind
 sudo ./install.sh
 ```
 
+Or just run the installer on its own — it fetches the scripts from the repo for
+you (handy if you only want the script):
+
+```bash
+sudo ./install.sh
+# or:  curl -fsSL <raw-install.sh-url> | sudo bash
+```
+
+By default it installs into `/opt/musicfind`; override with `--dir`, `--repo`,
+`--branch` or `--port`.
+
 The script installs the system packages it needs (`python3`, `python3-venv`,
 `ffmpeg`), sets up a virtualenv in `server/.venv`, installs the Python deps,
 creates `server/data/` and a `server/.env` with a random admin password, then

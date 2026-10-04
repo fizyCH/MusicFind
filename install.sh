@@ -2,25 +2,34 @@
 #
 # MusicFind server installer (Linux + systemd).
 #
-# Installs Python dependencies into server/.venv, creates the runtime data
-# directory and a .env file (with a random admin password), registers a
-# systemd service and starts it.
+# Can be run in two ways:
 #
-# Usage:
-#   sudo ./install.sh            # install / update
-#   sudo ./install.sh --port 8081
-#   sudo ./install.sh --uninstall
+#   1) From a cloned checkout (uses the local files):
+#        git clone <repo> musicfind && cd musicfind && sudo ./install.sh
+#
+#   2) Standalone — it will fetch the scripts from the repository itself:
+#        sudo ./install.sh
+#        curl -fsSL <raw-install.sh-url> | sudo bash
+#
+# Options:
+#   --repo <url>      repository to fetch from (default: the project repo)
+#   --branch <name>   branch to fetch (default: main)
+#   --dir <path>      where to install the server (default: /opt/musicfind)
+#   --port <port>     API port (default: 8081)
+#   --uninstall       stop and remove the systemd service
 #
 set -euo pipefail
 
 SERVICE_NAME="musicfind-api"
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SERVER_DIR="$REPO_DIR/server"
-VENV_DIR="$SERVER_DIR/.venv"
-DATA_DIR="$SERVER_DIR/data"
-ENV_FILE="$SERVER_DIR/.env"
-UNIT_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+DEFAULT_REPO="https://github.com/fizyCH/MusicFind.git"
+DEFAULT_BRANCH="main"
+DEFAULT_DIR="/opt/musicfind"
+
+REPO_URL="$DEFAULT_REPO"
+BRANCH="$DEFAULT_BRANCH"
+INSTALL_DIR="$DEFAULT_DIR"
 PORT="8081"
+UNINSTALL=0
 
 log()  { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*"; }
@@ -29,10 +38,13 @@ die()  { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 # --- args ---
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --repo) REPO_URL="${2:?}"; shift 2 ;;
+    --branch) BRANCH="${2:?}"; shift 2 ;;
+    --dir) INSTALL_DIR="${2:?}"; shift 2 ;;
     --port) PORT="${2:?}"; shift 2 ;;
     --uninstall) UNINSTALL=1; shift ;;
     -h|--help)
-      grep '^#' "$0" | sed 's/^# \{0,1\}//' | head -n 20
+      grep '^#' "$0" | sed 's/^# \{0,1\}//' | head -n 24
       exit 0 ;;
     *) die "Unknown argument: $1" ;;
   esac
@@ -40,33 +52,58 @@ done
 
 [[ "$(id -u)" -eq 0 ]] || die "Run as root: sudo ./install.sh"
 
-[[ -f "$SERVER_DIR/main.py" && -f "$SERVER_DIR/requirements.txt" ]] || die \
-"Could not find the project next to install.sh.
-Expected: $SERVER_DIR/main.py
-Run the installer from the repository root (the folder that contains 'server/' and 'app/'):
-    git clone <repo-url> musicfind && cd musicfind && sudo ./install.sh"
+UNIT_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 
 # --- uninstall ---
-if [[ "${UNINSTALL:-0}" == "1" ]]; then
+if [[ "$UNINSTALL" == "1" ]]; then
   log "Stopping and removing ${SERVICE_NAME}"
   systemctl disable --now "$SERVICE_NAME" 2>/dev/null || true
   rm -f "$UNIT_FILE"
   systemctl daemon-reload || true
-  log "Service removed. Data kept in $DATA_DIR (delete manually if needed)."
+  log "Service removed. Files are kept in ${INSTALL_DIR} (delete manually if needed)."
   exit 0
 fi
 
-# --- system packages ---
+# --- system packages (git needed before fetching) ---
 if command -v apt-get >/dev/null 2>&1; then
-  log "Installing system packages (python3, venv, ffmpeg)"
+  log "Installing system packages (python3, venv, ffmpeg, git)"
   apt-get update -y
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    python3 python3-venv python3-pip ffmpeg curl ca-certificates
+    python3 python3-venv python3-pip ffmpeg git curl ca-certificates
 else
-  warn "apt-get not found — make sure python3, python3-venv and ffmpeg are installed."
+  warn "apt-get not found — make sure python3, python3-venv, ffmpeg and git are installed."
 fi
 
 command -v python3 >/dev/null 2>&1 || die "python3 is required"
+
+# --- locate or fetch the project ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ -f "$SCRIPT_DIR/server/main.py" && -f "$SCRIPT_DIR/server/requirements.txt" ]]; then
+  REPO_DIR="$SCRIPT_DIR"
+  log "Using the local checkout at $REPO_DIR"
+else
+  command -v git >/dev/null 2>&1 || die "git is required to fetch the project"
+  REPO_DIR="$INSTALL_DIR"
+  if [[ -d "$REPO_DIR/.git" ]]; then
+    log "Updating existing checkout in $REPO_DIR"
+    git -C "$REPO_DIR" fetch --depth 1 origin "$BRANCH"
+    git -C "$REPO_DIR" checkout -q "$BRANCH"
+    git -C "$REPO_DIR" reset --hard "origin/$BRANCH"
+  else
+    log "Fetching scripts from $REPO_URL ($BRANCH)"
+    mkdir -p "$(dirname "$REPO_DIR")"
+    git clone --branch "$BRANCH" --depth 1 "$REPO_URL" "$REPO_DIR" \
+      || die "Could not clone $REPO_URL. If the repository is private, authenticate git first (or clone it manually and run install.sh from there)."
+  fi
+fi
+
+SERVER_DIR="$REPO_DIR/server"
+VENV_DIR="$SERVER_DIR/.venv"
+DATA_DIR="$SERVER_DIR/data"
+ENV_FILE="$SERVER_DIR/.env"
+
+[[ -f "$SERVER_DIR/main.py" ]] || die "server/main.py not found in $REPO_DIR"
 
 # --- python venv ---
 log "Creating virtualenv at $VENV_DIR"
@@ -126,6 +163,7 @@ IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 echo
 echo "-------------------------------------------------------------"
 echo " MusicFind server installed"
+echo "  Files:  $REPO_DIR"
 echo "  API:    http://${IP:-<server-ip>}:$PORT"
 echo "  Admin:  http://${IP:-<server-ip>}:$PORT/admin"
 echo "  Config: $ENV_FILE"
