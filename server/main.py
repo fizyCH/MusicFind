@@ -553,10 +553,10 @@ async def api_register(request):
     username = (payload.get("username") or "").strip()
     password = payload.get("password") or ""
     if len(username) < 3 or len(password) < 4:
-        return web.json_response({"ok": False, "error": "BAD_CREDENTIALS", "message": "Логин от 3 и пароль от 4 символов."}, status=400)
+        return web.json_response({"ok": False, "error": "BAD_CREDENTIALS", "message": "Username must be at least 3 and password at least 4 characters."}, status=400)
     for user in db["users"].values():
         if user.get("username", "").lower() == username.lower():
-            return web.json_response({"ok": False, "error": "USERNAME_TAKEN", "message": "Такой логин уже занят."}, status=409)
+            return web.json_response({"ok": False, "error": "USERNAME_TAKEN", "message": "That username is already taken."}, status=409)
     uid = secrets.token_hex(8)
     salt, digest = hash_password(password)
     db["users"][uid] = {
@@ -586,11 +586,11 @@ async def api_login(request):
     password = payload.get("password") or ""
     user = next((u for u in db["users"].values() if u.get("username", "").lower() == username.lower()), None)
     if not user or not verify_password(password, user["salt"], user["password_hash"]):
-        return web.json_response({"ok": False, "error": "AUTH_INVALID", "message": "Неверный логин или пароль."}, status=401)
+        return web.json_response({"ok": False, "error": "AUTH_INVALID", "message": "Wrong username or password."}, status=401)
     if user.get("status") == "pending":
-        return web.json_response({"ok": False, "error": "PENDING", "message": "Заявка ещё не одобрена администратором."}, status=403)
+        return web.json_response({"ok": False, "error": "PENDING", "message": "Your account is still waiting for approval."}, status=403)
     if user.get("status") == "rejected":
-        return web.json_response({"ok": False, "error": "REJECTED", "message": "Заявка отклонена."}, status=403)
+        return web.json_response({"ok": False, "error": "REJECTED", "message": "Your request was rejected."}, status=403)
     ensure_favorites(user)
     token = secrets.token_urlsafe(32)
     db["sessions"][token] = {"uid": user["id"], "created_at": now_iso()}
@@ -975,7 +975,7 @@ async def api_app_download(request):
 
 def page(title, body):
     return f"""<!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -1018,10 +1018,10 @@ def page(title, body):
 
 async def page_index(request):
     body = """
-    <div class="topbar"><a class="btn" href="/admin">Админ-панель</a></div>
+    <div class="topbar"><a class="btn" href="/admin">Admin panel</a></div>
     <div class="center">
       <div class="brand">MusicFind</div>
-      <div class="tagline">то что тебе нравится!</div>
+      <div class="tagline">the music you like</div>
     </div>"""
     return web.Response(text=page("MusicFind", body), content_type="text/html")
 
@@ -1035,14 +1035,14 @@ async def page_admin(request):
         body = """
         <div class="center">
           <div class="card" style="width:340px">
-            <h2 style="margin-top:0">Вход в админ-панель</h2>
+            <h2 style="margin-top:0">Admin login</h2>
             <form method="post" action="/admin/login">
-              <input type="password" name="password" placeholder="Пароль" autofocus>
-              <button class="btn primary" style="width:100%" type="submit">Войти</button>
+              <input type="password" name="password" placeholder="Password" autofocus>
+              <button class="btn primary" style="width:100%" type="submit">Sign in</button>
             </form>
           </div>
         </div>"""
-        return web.Response(text=page("Админ-панель", body), content_type="text/html")
+        return web.Response(text=page("Admin panel", body), content_type="text/html")
 
     db = request.app["db"]
     pending = [(uid, db["users"][uid]) for uid in db["requests"] if uid in db["users"]]
@@ -1053,11 +1053,11 @@ async def page_admin(request):
           <td>{html.escape(u.get('username',''))}</td>
           <td class="muted">{html.escape(u.get('created_at',''))}</td>
           <td class="row">
-            <form class="inline" method="post" action="/admin/approve"><input type="hidden" name="uid" value="{uid}"><button class="btn primary">Одобрить</button></form>
-            <form class="inline" method="post" action="/admin/reject"><input type="hidden" name="uid" value="{uid}"><button class="btn danger">Отклонить</button></form>
+            <form class="inline" method="post" action="/admin/approve"><input type="hidden" name="uid" value="{uid}"><button class="btn primary">Approve</button></form>
+            <form class="inline" method="post" action="/admin/reject"><input type="hidden" name="uid" value="{uid}"><button class="btn danger">Reject</button></form>
           </td>
         </tr>""" for uid, u in pending
-    ) or '<tr><td colspan="3" class="muted">Нет заявок</td></tr>'
+    ) or '<tr><td colspan="3" class="muted">No pending requests</td></tr>'
 
     def status_pill(status):
         return f'<span class="pill {status}">{status}</span>'
@@ -1071,15 +1071,15 @@ async def page_admin(request):
             <form class="inline" method="post" action="/admin/account/update">
               <input type="hidden" name="uid" value="{u['id']}">
               <input name="display_name" value="{html.escape(u.get('display_name',''))}" style="width:150px;display:inline-block">
-              <input name="avatar_url" value="{html.escape(u.get('avatar_url',''))}" placeholder="URL аватара" style="width:180px;display:inline-block">
-              <button class="btn">Сохранить</button>
+              <input name="avatar_url" value="{html.escape(u.get('avatar_url',''))}" placeholder="Avatar URL" style="width:180px;display:inline-block">
+              <button class="btn">Save</button>
             </form>
-            <form class="inline" method="post" action="/admin/account/delete" onsubmit="return confirm('Удалить аккаунт?')">
-              <input type="hidden" name="uid" value="{u['id']}"><button class="btn danger">Удалить</button>
+            <form class="inline" method="post" action="/admin/account/delete" onsubmit="return confirm('Delete account?')">
+              <input type="hidden" name="uid" value="{u['id']}"><button class="btn danger">Delete</button>
             </form>
           </td>
         </tr>""" for u in users
-    ) or '<tr><td colspan="4" class="muted">Нет аккаунтов</td></tr>'
+    ) or '<tr><td colspan="4" class="muted">No accounts</td></tr>'
 
     playlist_rows = []
     for u in users:
@@ -1091,30 +1091,30 @@ async def page_admin(request):
                   <td>{html.escape(name)}</td>
                   <td>{pl['track_count']}</td>
                   <td>
-                    <form class="inline" method="post" action="/admin/playlist/delete" onsubmit="return confirm('Удалить плейлист?')">
+                    <form class="inline" method="post" action="/admin/playlist/delete" onsubmit="return confirm('Delete playlist?')">
                       <input type="hidden" name="uid" value="{u['id']}"><input type="hidden" name="name" value="{html.escape(name)}">
-                      <button class="btn danger">Удалить</button>
+                      <button class="btn danger">Delete</button>
                     </form>
                   </td>
                 </tr>"""
             )
-    playlists_html = "".join(playlist_rows) or '<tr><td colspan="4" class="muted">Нет плейлистов</td></tr>'
+    playlists_html = "".join(playlist_rows) or '<tr><td colspan="4" class="muted">No playlists</td></tr>'
 
     body = f"""
     <div class="topbar">
-      <form class="inline" method="post" action="/admin/logout"><button class="btn">Выйти</button></form>
+      <form class="inline" method="post" action="/admin/logout"><button class="btn">Log out</button></form>
     </div>
     <div class="wrap">
-      <h2>Заявки на регистрацию</h2>
-      <div class="card"><table><tr><th>Логин</th><th>Создана</th><th>Действия</th></tr>{requests_rows}</table></div>
+      <h2>Registration requests</h2>
+      <div class="card"><table><tr><th>Username</th><th>Created</th><th>Actions</th></tr>{requests_rows}</table></div>
 
-      <h2>Аккаунты</h2>
-      <div class="card"><table><tr><th>Логин</th><th>Имя</th><th>Статус</th><th>Действия</th></tr>{accounts_rows}</table></div>
+      <h2>Accounts</h2>
+      <div class="card"><table><tr><th>Username</th><th>Name</th><th>Status</th><th>Actions</th></tr>{accounts_rows}</table></div>
 
-      <h2>Плейлисты</h2>
-      <div class="card"><table><tr><th>Пользователь</th><th>Плейлист</th><th>Треков</th><th></th></tr>{playlists_html}</table></div>
+      <h2>Playlists</h2>
+      <div class="card"><table><tr><th>User</th><th>Playlist</th><th>Tracks</th><th></th></tr>{playlists_html}</table></div>
     </div>"""
-    return web.Response(text=page("Админ-панель", body), content_type="text/html")
+    return web.Response(text=page("Admin panel", body), content_type="text/html")
 
 
 async def admin_login(request):
@@ -1214,32 +1214,32 @@ def auth_page(mode="login", error="", message=""):
         notice = f'<div class="muted" style="color:#86efac;margin-bottom:8px">{html.escape(message)}</div>'
     if mode == "register":
         form = f"""
-        <h2 style="margin-top:0">Регистрация</h2>
-        <div class="muted" style="margin-bottom:12px">После регистрации заявку должно одобрить руководство.</div>
+        <h2 style="margin-top:0">Sign up</h2>
+        <div class="muted" style="margin-bottom:12px">After signing up, an admin has to approve your account.</div>
         {notice}
         <form method="post" action="/createacc">
-          <input name="username" placeholder="Логин" autofocus>
-          <input type="password" name="password" placeholder="Пароль">
-          <button class="btn primary" style="width:100%" type="submit">Отправить заявку</button>
+          <input name="username" placeholder="Username" autofocus>
+          <input type="password" name="password" placeholder="Password">
+          <button class="btn primary" style="width:100%" type="submit">Request access</button>
         </form>
-        <div style="margin-top:12px" class="muted">Уже есть аккаунт? <a href="/login">Войти</a></div>"""
-        title = "Регистрация"
+        <div style="margin-top:12px" class="muted">Already have an account? <a href="/login">Sign in</a></div>"""
+        title = "Sign up"
     else:
         form = f"""
-        <h2 style="margin-top:0">Вход</h2>
+        <h2 style="margin-top:0">Sign in</h2>
         {notice}
         <form method="post" action="/login">
-          <input name="username" placeholder="Логин" autofocus>
-          <input type="password" name="password" placeholder="Пароль">
-          <button class="btn primary" style="width:100%" type="submit">Войти</button>
+          <input name="username" placeholder="Username" autofocus>
+          <input type="password" name="password" placeholder="Password">
+          <button class="btn primary" style="width:100%" type="submit">Sign in</button>
         </form>
-        <div style="margin-top:12px" class="muted">Нет аккаунта? <a href="/login?mode=register">Регистрация</a></div>"""
-        title = "Вход"
+        <div style="margin-top:12px" class="muted">No account yet? <a href="/login?mode=register">Sign up</a></div>"""
+        title = "Sign in"
     body = f"""
     <div class="center">
       <div class="card" style="width:360px">
         <div class="brand" style="font-size:28px;text-align:center">MusicFind</div>
-        <div class="tagline" style="font-size:14px;margin-bottom:16px;text-align:center">то что тебе нравится!</div>
+        <div class="tagline" style="font-size:14px;margin-bottom:16px;text-align:center">the music you like</div>
         {form}
       </div>
     </div>"""
@@ -1258,11 +1258,11 @@ async def page_login_post(request):
     password = form.get("password") or ""
     user = next((u for u in db["users"].values() if u.get("username", "").lower() == username.lower()), None)
     if not user or not verify_password(password, user["salt"], user["password_hash"]):
-        return web.Response(text=auth_page("login", error="Неверный логин или пароль"), content_type="text/html", status=401)
+        return web.Response(text=auth_page("login", error="Wrong username or password"), content_type="text/html", status=401)
     if user.get("status") == "pending":
-        return web.Response(text=auth_page("login", error="Заявка ещё не одобрена администратором"), content_type="text/html", status=403)
+        return web.Response(text=auth_page("login", error="Your account is still waiting for approval"), content_type="text/html", status=403)
     if user.get("status") == "rejected":
-        return web.Response(text=auth_page("login", error="Заявка отклонена"), content_type="text/html", status=403)
+        return web.Response(text=auth_page("login", error="Your request was rejected"), content_type="text/html", status=403)
     token = secrets.token_urlsafe(32)
     db["sessions"][token] = {"uid": user["id"], "created_at": now_iso()}
     ensure_favorites(user)
@@ -1285,9 +1285,9 @@ async def page_createacc_post(request):
     username = (form.get("username") or "").strip()
     password = form.get("password") or ""
     if len(username) < 3 or len(password) < 4:
-        return web.Response(text=auth_page("register", error="Логин от 3 и пароль от 4 символов"), content_type="text/html", status=400)
+        return web.Response(text=auth_page("register", error="Username must be at least 3 and password at least 4 characters"), content_type="text/html", status=400)
     if any(u.get("username", "").lower() == username.lower() for u in db["users"].values()):
-        return web.Response(text=auth_page("register", error="Такой логин уже занят"), content_type="text/html", status=409)
+        return web.Response(text=auth_page("register", error="That username is already taken"), content_type="text/html", status=409)
     uid = secrets.token_hex(8)
     salt, digest = hash_password(password)
     db["users"][uid] = {
@@ -1297,7 +1297,7 @@ async def page_createacc_post(request):
     db["requests"][uid] = {"uid": uid, "created_at": now_iso()}
     async with _lock:
         save_db(db)
-    return web.Response(text=auth_page("register", message="Заявка отправлена. Дождитесь одобрения."), content_type="text/html")
+    return web.Response(text=auth_page("register", message="Request sent. Wait for approval."), content_type="text/html")
 
 
 
