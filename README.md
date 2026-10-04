@@ -3,7 +3,7 @@
 A personal music streaming setup I put together for myself: an Android app and my
 own little backend that does the heavy lifting.
 
-The idea is simple — the phone talks to my server, and the server searches and
+The idea is simple — the phone talks to server, and the server searches and
 downloads tracks from SoundCloud / YouTube Music, keeps my playlists, and serves
 the audio back. No third-party keys, no accounts on someone else's service, and
 my data stays on my own machine.
