@@ -18,16 +18,56 @@ There are two parts:
 - **`server/`** — Python (aiohttp). This is where the actual work happens:
   searching and downloading with `yt-dlp`, streaming media, recognizing tracks
   with `shazamio`, fetching lyrics from LRCLIB, accounts, listening stats, a
-  small admin page, and handing out the APK for updates.
+  small admin page, and handing out the APK for updates. Runs either via the
+  install script (systemd) or with Docker.
 
 I tried to keep the client dumb — it only ever talks to your server.
 
 ## Requirements
 
-- Server: Linux with systemd, Python 3.10+, and `ffmpeg`.
-- App: Android Studio / Android SDK 35 and JDK 17.
+- **Docker way:** just Docker (with Compose).
+- **Install-script way:** Linux with systemd, Python 3.10+ and `ffmpeg`.
+- **App:** Android Studio / Android SDK 35 and JDK 17.
 
-## Setting up the server
+## Running the server
+
+Two ways to run the backend — pick whichever you prefer.
+
+### Option 1 — Docker
+
+```bash
+docker compose up -d --build
+```
+
+That builds the image, exposes the API on `8081`, keeps `server/data`
+(accounts, playlists, the database, avatars) on the host and uses a named volume
+for the downloaded media cache.
+
+Set the admin password (and port) in a `.env` file next to `docker-compose.yml`:
+
+```env
+ADMIN_PASSWORD=something-secret
+PORT=8081
+```
+
+or inline:
+
+```bash
+ADMIN_PASSWORD=something-secret docker compose up -d --build
+```
+
+Logs and shutdown:
+
+```bash
+docker compose logs -f
+docker compose down
+```
+
+Auto-updating yt-dlp/ffmpeg is off inside the container (rebuild the image to
+update); set `AUTO_UPDATE=1` if you want it anyway. Drop your built APK into
+`server/data/app/MusicFind.apk` on the host and the in-app updater picks it up.
+
+### Option 2 — Install script
 
 Clone it and run the installer:
 
@@ -37,8 +77,7 @@ cd musicfind
 sudo ./install.sh
 ```
 
-Or just run the installer on its own — it fetches the scripts from the repo for
-you (handy if you only want the script):
+Or run the installer on its own — it fetches the scripts from the repo for you:
 
 ```bash
 sudo ./install.sh
@@ -70,54 +109,17 @@ sudo ./install.sh --uninstall
 
 ### Configuration
 
-Everything lives in `server/.env` (there's a `server/.env.example` to copy from).
-The important bits:
+Both ways use the same settings. With the install script they live in
+`server/.env` (there's a `server/.env.example` to copy from); with Docker set
+them in the `.env` next to `docker-compose.yml`.
 
 | Variable | Default | What it does |
 |---|---|---|
 | `HOST` / `PORT` | `0.0.0.0` / `8081` | where the API listens |
 | `ADMIN_PASSWORD` | — | password for the admin page |
 | `APP_APK_PATH` | `server/data/app/MusicFind.apk` | the APK the app downloads for updates |
-| `AUTO_UPDATE` | `1` | auto-update yt-dlp/ffmpeg in the background |
+| `AUTO_UPDATE` | `1` (script) / `0` (Docker) | auto-update yt-dlp/ffmpeg in the background |
 | `AUTO_UPDATE_INTERVAL_SECONDS` | `86400` | how often to check |
-
-## Running with Docker
-
-If you don't want to install Python on the host, there's a Dockerfile for the
-server:
-
-```bash
-docker compose up -d --build
-```
-
-This builds the image, exposes the API on port `8081`, keeps `server/data`
-(accounts, playlists, the database, avatars) on the host, and uses a named
-volume for the downloaded media cache.
-
-Set the admin password (and port) in a `.env` file next to `docker-compose.yml`:
-
-```env
-ADMIN_PASSWORD=something-secret
-PORT=8081
-```
-
-or pass it inline:
-
-```bash
-ADMIN_PASSWORD=something-secret docker compose up -d --build
-```
-
-Logs and shutdown:
-
-```bash
-docker compose logs -f
-docker compose down
-```
-
-Auto-updating yt-dlp/ffmpeg is off by default inside the container (rebuild the
-image to update); set `AUTO_UPDATE=1` if you want it anyway. Drop your built APK
-into `server/data/app/MusicFind.apk` on the host and the in-app updater will
-pick it up.
 
 ## Building the Android app
 
@@ -152,6 +154,8 @@ server/
   music_engine.py           search, Shazam, yt-dlp, media, lyrics
   requirements.txt
   .env.example
+Dockerfile                  server image (python:3.12-slim + ffmpeg)
+docker-compose.yml          one-command Docker setup
 install.sh                  server installer (systemd)
 ```
 
