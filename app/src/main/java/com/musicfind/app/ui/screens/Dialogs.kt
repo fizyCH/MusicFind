@@ -79,6 +79,7 @@ fun SettingsDialog(
     fun applyLanguage(value: String) {
         SettingsController.setLanguage(value)
         com.musicfind.app.util.LocaleHelper.apply(context, value)
+        com.musicfind.app.service.PlaybackService.refreshNotification()
         (context as? android.app.Activity)?.recreate()
     }
 

@@ -13,8 +13,8 @@ android {
         applicationId = "com.musicfind.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 71
-        versionName = "1.2.68"
+        versionCode = 72
+        versionName = "1.2.69"
         vectorDrawables { useSupportLibrary = true }
     }
 

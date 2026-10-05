@@ -173,7 +173,7 @@ class PlaybackService : MediaSessionService() {
     private fun createChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (manager.getNotificationChannel(CHANNEL_ID) != null) return
+        // Always (re)create so the channel name/description follow the app language.
         val channel = NotificationChannel(
             CHANNEL_ID,
             Loc.s(R.string.playback_channel),
@@ -347,6 +347,16 @@ class PlaybackService : MediaSessionService() {
         fun updateFavoriteButton(favorite: Boolean) {
             favoriteState = favorite
             instance?.applyFavoritePreferences(favorite)
+        }
+
+        /** Re-create the channel and re-post the foreground notification after a language change. */
+        fun refreshNotification() {
+            val service = instance ?: return
+            service.createChannel()
+            if (service.foregroundStarted) {
+                runCatching { service.startForeground(NOTIFICATION_ID, service.buildNotification()) }
+                    .onFailure { Log.e("MusicFind", "refreshNotification failed", it) }
+            }
         }
 
         fun pause() {
